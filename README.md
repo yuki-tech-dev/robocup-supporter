@@ -304,13 +304,13 @@ URL： <https://band.us/>
 
 ### 10-1. 使用予定の技術
 
-- フレームワーク：Ruby on Rails (Ruby)
-- DB：PostgreSQL
+- フレームワーク：Ruby on Rails : 7.0.x (Ruby : 3.1.x)
+- DB：PostgreSQL : 14.x 〜 16.x
 - デプロイ先：Render.com
 - 使用予定ライブラリ：
-  - sorcery (ユーザー認証)
-  - simple_calendar (月間カレンダー表示)
-  - Active Storage (教材ファイルのアップロード・管理用)
+  - sorcery: 0.17.0 (ユーザー認証)
+  - simple_calendar: 2.4 (月間カレンダー表示)
+  - Active Storage: Rails7.0.x 内包機能 (教材ファイルのアップロード・管理用)
 
 ---
 
