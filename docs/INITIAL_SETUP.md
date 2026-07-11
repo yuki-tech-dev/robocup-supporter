@@ -62,10 +62,112 @@
 docker compose build
 
 # Rails アプリ生成（例）
-docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind
+docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind --force --skip-bundle
 
 # 起動（ユーザー実行）
 docker compose up
 ```
 
-3. `Gemfile` 作成後、必要があればドキュメントを追記・修正します。
+3.　 `Gemfile` 作成後、必要があればドキュメントを追記・修正します。
+
+### 2026-07-11 実施内容
+
+#### 確認結果
+
+- `docker compose build` を実行し、Docker イメージ `robocup-supporter-web` のビルドが正常終了しました。
+- ビルドログでは `bundle install` まで完了しており、イメージ生成に問題がないことを確認しました。
+- これにより、Docker 環境のベース構築は完了しており、次は Rails アプリ生成へ進める状態です。
+
+#### 補足
+
+- 今回の `docker compose build` 成功は、`Dockerfile.dev` と `compose.yml` の構成が整っていることを示しています。
+- ただし、Rails アプリ本体の生成はまだ実施していないため、`rails new` 実行後に `Gemfile` や Rails の初期構成が追加されます。
+- 今回のリポジトリには既存の `Gemfile` / `Gemfile.lock` / `README.md` があるため、`rails new .` では `--force --skip-bundle` を付けた形で実行するのが安全です。
+- その後、`docker compose up` によりアプリ起動を確認し、`localhost:3000` での表示確認を行います。
+
+#### 実施手順（2026-07-11 完了）
+
+以下の順番で実施し、すべて完了しました。
+
+##### 1. Rails のインストール確認
+
+```bash
+docker compose run --rm web gem install rails -v '~> 7.2'
+docker compose run --rm web rails -v
+# => Rails 7.2.3.1
+```
+
+##### 2. Rails アプリ生成
+
+既存リポジトリには `Gemfile` / `Gemfile.lock` / `README.md` があるため、`--force --skip-bundle` を付けて実行。
+
+```bash
+docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind --force --skip-bundle
+```
+
+- `--force`: 既存ファイルがあっても生成を続行
+- `--skip-bundle`: 生成直後の `bundle install` を省略し、後で明示的に実行する
+
+##### 3. config/database.yml の編集
+
+PostgreSQL コンテナに接続するため、`default` セクションに以下を追加。
+
+```yaml
+host: db
+username: postgres
+password: password
+```
+
+##### 4. Procfile.dev の作成
+
+`--skip-bundle` により `bin/dev` が生成されなかったため、手動で作成。
+
+```
+web: env RUBY_DEBUG_OPEN=true bin/rails server -b 0.0.0.0 -p 3000
+js: yarn build --watch
+css: yarn build:css --watch
+```
+
+##### 5. bundle install の実行
+
+`--skip-bundle` で省略された依存関係のインストールを実施。
+
+```bash
+docker compose run --rm web bundle install
+# => Bundle complete! 17 Gemfile dependencies, 105 gems now installed.
+```
+
+##### 6. esbuild / Tailwind CSS のセットアップ
+
+`--skip-bundle` により `bin/dev` と `package.json` が生成されていなかったため、install コマンドで補完。
+
+```bash
+docker compose run --rm web rails javascript:install:esbuild
+docker compose run --rm web rails css:install:tailwind
+```
+
+- `bin/dev` と `package.json` が生成された
+- `yarn build` / `yarn build:css` が成功したことを確認
+
+##### 7. 起動確認
+
+```bash
+docker compose up
+```
+
+- `localhost:3000` で Rails の初期画面が表示された
+- Rails 7.2.3.1 / Ruby 3.4.8 / Rack 3.2.6 を確認
+
+#### トラブルと解決策
+
+| 問題 | 原因 | 解決策 |
+|---|---|---|
+| `sh -lc` 経由で `rails` コマンドが見つからない | シェル環境の PATH 差 | `sh -lc` を使わず直接 `docker compose run --rm web rails ...` で実行 |
+| `bundle exec rails -v` で `railties is not currently included` | `--skip-bundle` で依存関係が未インストール | `docker compose run --rm web bundle install` を実行 |
+| `bin/dev` が存在しない | `--skip-bundle` で install コマンドが走らなかった | `rails javascript:install:esbuild` と `rails css:install:tailwind` で補完 |
+
+#### 決定事項
+
+- 以降の開発方針として、`Sorcery 0.18.0（最新）`、`Ruby 3.4.8`、`Rails 7.2` の組み合わせで進めます。
+- README の内容は後程更新予定です。
+- README 更新時には、上記のバージョン方針とセットアップ手順を反映します。
