@@ -68,4 +68,31 @@ docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind
 docker compose up
 ```
 
-3. `Gemfile` 作成後、必要があればドキュメントを追記・修正します。
+3.　 `Gemfile` 作成後、必要があればドキュメントを追記・修正します。
+
+### 2026-07-11 実施内容
+
+#### 確認結果
+
+- `docker compose build` を実行し、Docker イメージ `robocup-supporter-web` のビルドが正常終了しました。
+- ビルドログでは `bundle install` まで完了しており、イメージ生成に問題がないことを確認しました。
+- これにより、Docker 環境のベース構築は完了しており、次は Rails アプリ生成へ進める状態です。
+
+#### 補足
+
+- 今回の `docker compose build` 成功は、`Dockerfile.dev` と `compose.yml` の構成が整っていることを示しています。
+- ただし、Rails アプリ本体の生成はまだ実施していないため、`rails new` 実行後に `Gemfile` や Rails の初期構成が追加されます。
+- その後、`docker compose up` によりアプリ起動を確認し、`localhost:3000` での表示確認を行います。
+
+ 次のステップ
+
+1. `docker compose run --rm web gem install rails -v '~> 7.2'`
+2. `docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind`
+3. `docker compose up` で起動確認
+4. `localhost:3000` でページ表示確認
+
+#### 2026-07-11 決定事項
+
+- 以降の開発方針として、`Sorcery 0.18.0（最新）`、`Ruby 3.4.8`、`Rails 7.2` の組み合わせで進めます。
+- README の内容は後程更新予定です。
+- README 更新時には、上記のバージョン方針とセットアップ手順を反映します。
