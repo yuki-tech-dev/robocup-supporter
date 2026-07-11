@@ -62,7 +62,7 @@
 docker compose build
 
 # Rails アプリ生成（例）
-docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind
+docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind --force --skip-bundle
 
 # 起動（ユーザー実行）
 docker compose up
@@ -82,12 +82,13 @@ docker compose up
 
 - 今回の `docker compose build` 成功は、`Dockerfile.dev` と `compose.yml` の構成が整っていることを示しています。
 - ただし、Rails アプリ本体の生成はまだ実施していないため、`rails new` 実行後に `Gemfile` や Rails の初期構成が追加されます。
+- 今回のリポジトリには既存の `Gemfile` / `Gemfile.lock` / `README.md` があるため、`rails new .` では `--force --skip-bundle` を付けた形で実行するのが安全です。
 - その後、`docker compose up` によりアプリ起動を確認し、`localhost:3000` での表示確認を行います。
 
  次のステップ
 
 1. `docker compose run --rm web gem install rails -v '~> 7.2'`
-2. `docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind`
+2. `docker compose run --rm web rails new . -d postgresql -j esbuild --css=tailwind --force --skip-bundle`
 3. `docker compose up` で起動確認
 4. `localhost:3000` でページ表示確認
 
