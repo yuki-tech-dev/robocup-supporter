@@ -276,3 +276,25 @@ run: |
 
 - Branch protection rules（CI 未通過時のマージブロック）は GitHub 側で設定する。
 - Node 20 deprecation 警告は CI 失敗原因ではないため、別PRで Actions 更新時に対応する。
+
+#### Issue #21: Tailwind CSS の導入・初期設定
+
+#### 確認結果（Issue #21）
+
+- `rails new --css=tailwind` 実行時に以下が自動生成済みであることを確認。
+  - `app/assets/stylesheets/application.tailwind.css`（`@import "tailwindcss";`）
+  - `package.json` の `build:css` スクリプト（`@tailwindcss/cli` v4 を使用）
+  - `Procfile.dev` の `css: yarn build:css --watch`
+  - `application.html.erb` の `stylesheet_link_tag "application"`（コンパイル済みCSSを読み込む）
+- `docker compose up` 起動時のログで Tailwind v4.3.2 のコンパイル動作を確認。
+
+```text
+tailwindcss v4.3.2
+Done in 276ms
+```
+
+#### 補足（Tailwind v4 について）
+
+- Issue の記載にある `config/tailwind.config.js` は Tailwind v3 の設定ファイルであり、v4 では不要。
+- v4 では `@import "tailwindcss"` の記述のみで動作する。
+- Tailwind クラスの動作確認は Issue #22（TOPページ作成）にて実施予定。
