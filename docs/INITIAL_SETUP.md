@@ -122,7 +122,7 @@ password: password
 
 `--skip-bundle` により `bin/dev` が生成されなかったため、手動で作成。
 
-```
+```text
 web: env RUBY_DEBUG_OPEN=true bin/rails server -b 0.0.0.0 -p 3000
 js: yarn build --watch
 css: yarn build:css --watch
@@ -160,14 +160,73 @@ docker compose up
 
 #### トラブルと解決策
 
-| 問題 | 原因 | 解決策 |
+|問題|原因|解決策|
 |---|---|---|
-| `sh -lc` 経由で `rails` コマンドが見つからない | シェル環境の PATH 差 | `sh -lc` を使わず直接 `docker compose run --rm web rails ...` で実行 |
-| `bundle exec rails -v` で `railties is not currently included` | `--skip-bundle` で依存関係が未インストール | `docker compose run --rm web bundle install` を実行 |
-| `bin/dev` が存在しない | `--skip-bundle` で install コマンドが走らなかった | `rails javascript:install:esbuild` と `rails css:install:tailwind` で補完 |
+|`sh -lc` 経由で `rails` コマンドが見つからない|シェル環境の PATH 差|`sh -lc` を使わず直接 `docker compose run --rm web rails ...` で実行|
+|`bundle exec rails -v` で `railties is not currently included`|`--skip-bundle` で依存関係が未インストール|`docker compose run --rm web bundle install` を実行|
+|`bin/dev` が存在しない|`--skip-bundle` で install コマンドが走らなかった|`rails javascript:install:esbuild` と `rails css:install:tailwind` で補完|
 
 #### 決定事項
 
 - 以降の開発方針として、`Sorcery 0.18.0（最新）`、`Ruby 3.4.8`、`Rails 7.2` の組み合わせで進めます。
 - README の内容は後程更新予定です。
 - README 更新時には、上記のバージョン方針とセットアップ手順を反映します。
+
+### 2026-07-12 実施内容
+
+#### Issue #17: RSpec の導入・初期設定
+
+#### 実施手順
+
+1. `Gemfile` の `group :development, :test do` に以下を追加。
+
+```ruby
+gem "rspec-rails"
+gem "factory_bot_rails"
+```
+
+1. 依存関係をインストール。
+
+```bash
+docker compose run --rm web bundle install
+```
+
+1. RSpec の初期化ファイルを生成。
+
+```bash
+docker compose run --rm web rails generate rspec:install
+```
+
+1. テスト実行の動作確認。
+
+```bash
+docker compose run --rm web bundle exec rspec --format documentation
+```
+
+#### 確認結果（Issue #17）
+
+- `bundle install` で以下がインストールされたことを確認。
+  - `rspec-rails (8.0.4)`
+  - `factory_bot_rails (6.5.1)`
+- `rails generate rspec:install` で以下が生成された。
+  - `.rspec`
+  - `spec/spec_helper.rb`
+  - `spec/rails_helper.rb`
+- `bundle exec rspec --format documentation` の実行結果。
+
+```text
+No examples found.
+
+Finished in 0.00032 seconds (files took 0.11812 seconds to load)
+0 examples, 0 failures
+```
+
+#### 発生した事象と対応
+
+- 初回は `Could not find generator 'rspec:install'` / `bundler: command not found: rspec` が発生。
+- 原因は、`Gemfile` の追記後に保存せず `bundle install` を実行していたため。
+- `Gemfile` 保存後に `bundle install` を再実行し、解消した。
+
+#### 補足（FactoryBot の運用方針）
+
+- `config.include FactoryBot::Syntax::Methods` は追加せず、明示的に `FactoryBot.create(:user)` の形式で記述する方針とした。
