@@ -1,0 +1,24 @@
+<%# ヘッダー：ロゴ + ボタン %>
+<header class="flex items-center justify-between px-8 py-4 bg-gray-800">
+  <div class="text-white text-2xl font-bold">RoboCup Supporter</div>
+  <div class="flex gap-3">
+    <a href="#" class="border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition">新規登録</a>
+    <a href="#" class="bg-white text-gray-800 px-5 py-2 rounded hover:bg-gray-100 transition">ログイン</a>
+  </div>
+</header>
+
+<%# ヒーロー：背景画像 + タイトル %>
+<main class="relative flex items-center justify-center"
+      style="min-height: calc(100vh - 128px); background-image: url('<%= asset_path('iwatamikan.jpg') %>'); background-size: auto 100%; background-position: center;">
+  <div class="absolute inset-0 bg-black opacity-50"></div>
+  <div class="relative z-10 text-center text-white px-6">
+    <h1 class="text-5xl font-bold mb-4 tracking-wide">RoboCup Supporter</h1>
+    <p class="text-xl">ロボットプログラミング教室の連絡・教材管理をシンプルに</p>
+  </div>
+</main>
+
+<%# フッター %>
+<footer class="flex justify-center gap-10 px-8 py-4 bg-gray-800 text-gray-300 text-sm">
+  <a href="#" class="hover:text-white transition">利用規約</a>
+  <a href="#" class="hover:text-white transition">プライバシーポリシー</a>
+</footer>
