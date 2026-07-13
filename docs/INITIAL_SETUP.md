@@ -176,7 +176,7 @@ docker compose up
 
 #### Issue #17: RSpec の導入・初期設定
 
-#### 実施手順
+#### Issue #22 実施手順
 
 1. `Gemfile` の `group :development, :test do` に以下を追加。
 
@@ -298,3 +298,51 @@ Done in 276ms
 - Issue の記載にある `config/tailwind.config.js` は Tailwind v3 の設定ファイルであり、v4 では不要。
 - v4 では `@import "tailwindcss"` の記述のみで動作する。
 - Tailwind クラスの動作確認は Issue #22（TOPページ作成）にて実施予定。
+
+### 2026-07-13 実施内容
+
+#### Issue #22: TOPページの作成・Tailwind CSS 動作確認
+
+#### 実施手順
+
+1. コントローラ・ビューの生成。
+
+```bash
+docker compose exec web bin/rails generate controller top index
+```
+
+生成されたファイル：
+
+- `app/controllers/top_controller.rb`
+- `app/views/top/index.html.erb`
+- `spec/requests/top_spec.rb`
+- `spec/views/top/index.html.erb_spec.rb`
+- `app/helpers/top_helper.rb`
+
+1. `config/routes.rb` を修正。
+
+自動生成された `get "top/index"` を削除し、`root "top#index"` に変更。
+
+- `get "top/index"` → `/top/index` というURLになるため不適切
+- `root "top#index"` → `http://localhost:3000/` でTOPページを表示
+
+1. `app/assets/images/iwatamikan.jpg` に背景画像を配置。
+
+1. `app/views/top/index.html.erb` にTailwindクラスを使ったTOPページを実装。
+
+#### 実装内容（TOPページ構成）
+
+- **ヘッダー**：ロゴ（左）・新規登録・ログインボタン（右）
+- **ヒーローセクション**：ロボット画像を背景（`asset_path` でパス解決）、半透明オーバーレイ（`opacity-50`）、タイトル・キャッチコピーを中央表示
+- **フッター**：利用規約・プライバシーポリシーリンク
+
+#### 確認結果（Issue #22）
+
+- `http://localhost:3000/` でTOPページが表示されることを確認。
+- Tailwindクラス（`flex`・`text-5xl`・`rounded-full`・`hover:` など）が正常に動作することを確認。
+
+#### Issue #22 補足
+
+- `asset_path` ヘルパーを使うことでアセットパイプラインが画像の正しいURLを解決する。
+- `background-size: auto 120%` により画像がタイル状に繰り返し表示される（`background-repeat` デフォルトが `repeat` のため）。意図的にこのデザインを採用。
+- ログイン・新規登録ボタンのリンク先は現在 `#`（認証機能実装時に変更予定）。
