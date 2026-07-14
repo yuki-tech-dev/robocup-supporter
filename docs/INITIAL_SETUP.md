@@ -346,3 +346,44 @@ docker compose exec web bin/rails generate controller top index
 - `asset_path` ヘルパーを使うことでアセットパイプラインが画像の正しいURLを解決する。
 - `background-size: auto 120%` により画像がタイル状に繰り返し表示される（`background-repeat` デフォルトが `repeat` のため）。意図的にこのデザインを採用。
 - ログイン・新規登録ボタンのリンク先は現在 `#`（認証機能実装時に変更予定）。
+
+### 2026-07-14 実施内容
+
+#### Issue #19: i18n（国際化）の導入と日本語化の初期設定
+
+#### 実施手順
+
+1. `Gemfile` に以下を追加。
+
+```ruby
+gem "rails-i18n"
+```
+
+2. 依存関係をインストール。
+
+```bash
+docker compose run --rm web bundle install
+# => Installing rails-i18n 7.0.10
+```
+
+3. `config/application.rb` にデフォルトロケールを設定。
+
+```ruby
+# デフォルトロケールを日本語に設定
+config.i18n.default_locale = :ja
+```
+
+4. `config/locales/ja.yml` を新規作成。
+
+#### 確認結果（Issue #19）
+
+- `rails console` にて以下を確認。
+  - `I18n.locale` → `:ja`
+  - `I18n.t "hello"` → `"こんにちは"`
+- `bundle exec rspec` 実行結果：`3 examples, 0 failures`
+
+#### 補足（Issue #19）
+
+- `rails-i18n` gem により Rails 標準のバリデーションエラーメッセージが自動的に日本語化される。
+- `ja.yml` はアプリ固有の翻訳を追加するためのファイルとして作成。今後モデル追加のたびに翻訳を追記していく。
+- ロケール切り替え（多言語対応）が必要になった際は `around_action` と `I18n.with_locale` を使用する。
