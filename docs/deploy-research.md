@@ -131,3 +131,27 @@ production:
 - **更新**: GitHub へ push → Render が Auto Deploy
 - **手動再デプロイ**: Render の「Deploy latest commit」
 - **ロールバック**: Render のデプロイ履歴から以前のバージョンを再リリース
+
+---
+
+## 作業ログ
+
+### 2026-07-17 実施内容
+
+- Neon側セットアップ完了
+  - プロジェクト作成（Project name: `robocup-supporter` / Postgres version: 17 / Region: AWS Asia Pacific 1 (Singapore)）
+  - 接続文字列（`DATABASE_URL` 用）取得済み
+- Render側セットアップ（途中）
+  - GitHub連携の権限設定（`yuki-tech-dev/robocup-supporter` を Only select repositories で許可）
+  - Web Service作成画面で `robocup-supporter` リポジトリを選択
+  - **Language は Docker のまま採用することに決定**（Ruby buildpack方式ではなく、リポジトリ既存の本番用 `Dockerfile` を使う方針）
+    - 理由: Build/Start Commandの手打ちが不要、`RAILS_ENV`もDockerfile内で設定済み、マイグレーションも`bin/docker-entrypoint`で自動実行される
+    - `cssbundling-rails` / `jsbundling-rails` が `assets:precompile` にフックするため、Tailwind CSS/esbuildもDockerfileだけで問題なくビルドされることを確認済み
+
+### 次回（明日）やること
+
+1. `config/database.yml` の production 設定を `DATABASE_URL` 対応に修正
+2. Render の Web Service作成を最後まで進める（Region・Instance Type・環境変数設定）
+   - 環境変数: `DATABASE_URL`（Neon接続文字列） / `RAILS_MASTER_KEY`（`config/master.key`の中身）
+   - ※ Docker方式のため `RAILS_ENV` の設定は不要
+3. デプロイ実行・動作確認（TOPページ200 / DB書き込み確認）
