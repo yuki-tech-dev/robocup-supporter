@@ -482,6 +482,8 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - `app/models/user.rb` に `authenticates_with_sorcery!` が生成されていることを確認。
 - `config/initializers/sorcery.rb` の `user_config` 内、`email_attribute_name` / `crypted_password_attribute_name` / `salt_attribute_name` の設定（いずれもコメントアウト＝デフォルト値）が、Issue #25で作成した `users` テーブルのカラム名（`email` / `crypted_password` / `salt`）と一致していることを確認。カラム名の変更は不要と判断。
 - `Rails.application.config.sorcery.submodules = []` のまま（コア機能のみ）とし、`remember_me` 等の追加サブモジュールは後続のIssue（ログイン機能実装時）で検討する。
+- `docker compose exec web rails db:migrate` を実行し、エラーなく完了することを確認（未実行のマイグレーションが無いため実質的に何も処理されない状態）。
+- コンテナを一度 `docker compose stop` → `docker compose up` で再起動し、起動ログにSorcery起因のエラー（`NoMethodError` 等）が無いこと、Pumaが正常起動しTOPページが200 OKで表示されることを確認。
 
 #### 補足（Issue #26）
 
