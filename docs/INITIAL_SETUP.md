@@ -303,7 +303,7 @@ Done in 276ms
 
 #### Issue #22: TOPページの作成・Tailwind CSS 動作確認
 
-#### 実施手順
+#### 実施手順（Issue #22）
 
 1. コントローラ・ビューの生成。
 
@@ -351,7 +351,7 @@ docker compose exec web bin/rails generate controller top index
 
 #### Issue #19: i18n（国際化）の導入と日本語化の初期設定
 
-#### 実施手順
+#### 実施手順（Issue #19）
 
 1. `Gemfile` に以下を追加。
 
@@ -359,21 +359,21 @@ docker compose exec web bin/rails generate controller top index
 gem "rails-i18n"
 ```
 
-2. 依存関係をインストール。
+1. 依存関係をインストール。
 
 ```bash
 docker compose run --rm web bundle install
 # => Installing rails-i18n 7.0.10
 ```
 
-3. `config/application.rb` にデフォルトロケールを設定。
+1. `config/application.rb` にデフォルトロケールを設定。
 
 ```ruby
 # デフォルトロケールを日本語に設定
 config.i18n.default_locale = :ja
 ```
 
-4. `config/locales/ja.yml` を新規作成。
+1. `config/locales/ja.yml` を新規作成。
 
 #### 確認結果（Issue #19）
 
@@ -392,7 +392,7 @@ config.i18n.default_locale = :ja
 
 #### Issue #25: usersテーブルのマイグレーション作成
 
-#### 実施手順
+#### 実施手順（Issue #25）
 
 1. マイグレーションファイルを生成。
 
@@ -400,7 +400,7 @@ config.i18n.default_locale = :ja
 docker compose exec web rails g migration CreateUsers email:string:uniq crypted_password:string salt:string name:string role:integer
 ```
 
-2. 生成された `db/migrate/xxxxx_create_users.rb` を編集し、各カラムに `null: false`、`role` に `default: 0` を追加。
+1. 生成された `db/migrate/xxxxx_create_users.rb` を編集し、各カラムに `null: false`、`role` に `default: 0` を追加。
 
 ```ruby
 class CreateUsers < ActiveRecord::Migration[7.2]
@@ -419,7 +419,7 @@ class CreateUsers < ActiveRecord::Migration[7.2]
 end
 ```
 
-3. マイグレーションを実行。
+1. マイグレーションを実行。
 
 ```bash
 docker compose exec web rails db:migrate
