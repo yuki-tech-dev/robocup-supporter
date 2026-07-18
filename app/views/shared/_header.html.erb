@@ -1,0 +1,16 @@
+<%# 共通ヘッダー：ロゴ + ログイン状態に応じたナビゲーション %>
+<header class="flex items-center justify-between px-8 py-4 bg-gray-800">
+  <%= link_to "RoboCup Supporter", root_path, class: "text-white text-2xl font-bold" %>
+  <nav class="flex gap-3">
+    <% if logged_in? %>
+      <span class="text-white px-3 py-2"><%= current_user.name %></span>
+      <%# TODO: Issue #29でログアウト機能実装後、logout_pathに差し替え、data: { turbo_method: :delete }を付与する %>
+      <%= link_to "ログアウト", "#", class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
+    <% else %>
+      <%# TODO: Issue #27でサインアップ機能実装後、new_user_registration_path等に差し替える %>
+      <%= link_to "新規登録", "#", class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
+      <%# TODO: Issue #28でログイン機能実装後、new_user_session_path等に差し替える %>
+      <%= link_to "ログイン", "#", class: "bg-white text-gray-800 px-5 py-2 rounded hover:bg-gray-100 transition" %>
+    <% end %>
+  </nav>
+</header>
