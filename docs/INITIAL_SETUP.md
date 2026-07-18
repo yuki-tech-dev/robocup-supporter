@@ -447,3 +447,42 @@ docker compose exec web rails db:migrate
 
 - Sorceryの認証機能で使用する `crypted_password` / `salt` のカラム名は、Sorceryのデフォルト設定に合わせたもの（Issue #26で導入予定）。
 - マイグレーションファイルを手動編集する場合は、`db:migrate` 実行前に編集を完了させること（実行後の編集はDBに反映されない）。
+
+#### Issue #26: Sorcery（認証gem）の導入・初期設定
+
+#### 実施手順（Issue #26）
+
+1. `Gemfile` に `gem "sorcery"` を追加し、`bundle install` を実行。
+
+```bash
+bundle install
+```
+
+1. Sorceryの初期設定コマンドを実行。
+
+```bash
+docker compose exec web rails g sorcery:install
+```
+
+1. `rails g sorcery:install` により自動生成された `db/migrate/xxxxx_sorcery_core.rb` の中身を確認したところ、Issue #25で既に作成済みの `users` テーブルと重複する `create_table :users` が含まれていたため、当該マイグレーションファイルを削除した。
+
+```bash
+rm db/migrate/20260718075118_sorcery_core.rb
+```
+
+1. `config/initializers/sorcery.rb` の内容を確認。
+
+#### 発生した事象と対応（Issue #26）
+
+- `sorcery:install` ジェネレータは、`users` テーブルが未作成であることを前提に、`crypted_password` / `salt` などのカラムを持つ新規 `create_table :users` のマイグレーションを自動生成する。
+- 本プロジェクトではIssue #25で `users` テーブルを既に作成済み（かつSorceryのデフォルトカラム名に合わせて設計済み）だったため、そのままマイグレーションを実行すると「テーブルが既に存在する」エラーになる。生成されたマイグレーションファイルの中身を確認のうえ削除して対応した。
+
+#### 確認結果（Issue #26）
+
+- `app/models/user.rb` に `authenticates_with_sorcery!` が生成されていることを確認。
+- `config/initializers/sorcery.rb` の `user_config` 内、`email_attribute_name` / `crypted_password_attribute_name` / `salt_attribute_name` の設定（いずれもコメントアウト＝デフォルト値）が、Issue #25で作成した `users` テーブルのカラム名（`email` / `crypted_password` / `salt`）と一致していることを確認。カラム名の変更は不要と判断。
+- `Rails.application.config.sorcery.submodules = []` のまま（コア機能のみ）とし、`remember_me` 等の追加サブモジュールは後続のIssue（ログイン機能実装時）で検討する。
+
+#### 補足（Issue #26）
+
+- 本Issueのスコープは「Sorceryの導入・初期設定」までであり、`User` モデルへのバリデーション追加（`validates :email` 等）やログイン機能の実装は含まない。それらは後続のIssueで対応する。
