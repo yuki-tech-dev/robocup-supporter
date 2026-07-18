@@ -9,7 +9,7 @@
 ## 採用構成（全体像）
 
 | 役割 | サービス |
-|------|----------|
+| ---- | -------- |
 | アプリ | Rails（Render Web Service） |
 | DB | Neon Postgres（DATABASE_URL で接続） |
 | ソース管理 | GitHub（Render が自動デプロイ） |
@@ -22,7 +22,7 @@
 ### Neon（Free プラン）
 
 | 項目 | 内容 |
-|------|------|
+| ---- | ---- |
 | ストレージ | 0.5 GB |
 | コンピューティング | 最大 2 CU（autoscaling） |
 | ブランチ | 10 branches / プロジェクト |
@@ -32,7 +32,7 @@
 ### Render（Free プラン）
 
 | 項目 | 内容 |
-|------|------|
+| ---- | ---- |
 | RAM | 512 MB |
 | CPU | 0.1 CPU |
 | 料金 | $0 / 月 |
@@ -69,7 +69,7 @@
 4. 以下の項目を設定
 
 | 項目 | 設定値 |
-|------|--------|
+| ---- | ------ |
 | Name | robocup-supporter（任意） |
 | Language | Ruby |
 | Branch | main |
@@ -78,10 +78,10 @@
 | Start Command | `bundle exec puma -t 5:5 -p ${PORT:-3000} -e ${RACK_ENV:-development}` |
 | Instance Type | Free |
 
-5. 環境変数（Environment Variables）を設定
+1. 環境変数（Environment Variables）を設定
 
 | キー | 値 |
-|------|----|
+| ---- | -- |
 | `RAILS_ENV` | `production` |
 | `DATABASE_URL` | Neon の接続文字列（STEP 1 で取得） |
 | `RAILS_MASTER_KEY` | `config/master.key` の中身 |
@@ -90,7 +90,7 @@
 
 `config/database.yml` の production 設定を `DATABASE_URL` 対応に変更する。
 
-**現在の設定（要変更）**
+#### 現在の設定（要変更）
 
 ```yaml
 production:
@@ -100,7 +100,7 @@ production:
   password: <%= ENV["MYAPP_DATABASE_PASSWORD"] %>
 ```
 
-**修正後（DATABASE_URL を使う形）**
+#### 修正後（DATABASE_URL を使う形）
 
 ```yaml
 production:
@@ -119,7 +119,7 @@ production:
 ## よくある詰まりポイント
 
 | 症状 | 原因 | 対処 |
-|------|------|------|
+| ---- | ---- | ---- |
 | DB 接続エラー | `DATABASE_URL` が誤り | Neon の接続文字列を再確認（USER/PASS/HOST/sslmode） |
 | DB 接続エラー | migration 未実行 | Build Command に `bin/rails db:migrate` が含まれているか確認 |
 | credentials エラー | `RAILS_MASTER_KEY` が未設定 | Render の環境変数に `config/master.key` の値を追加 |

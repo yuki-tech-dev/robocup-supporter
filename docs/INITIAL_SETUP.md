@@ -303,7 +303,7 @@ Done in 276ms
 
 #### Issue #22: TOPページの作成・Tailwind CSS 動作確認
 
-#### 実施手順
+#### 実施手順（Issue #22）
 
 1. コントローラ・ビューの生成。
 
@@ -351,7 +351,7 @@ docker compose exec web bin/rails generate controller top index
 
 #### Issue #19: i18n（国際化）の導入と日本語化の初期設定
 
-#### 実施手順
+#### 実施手順（Issue #19）
 
 1. `Gemfile` に以下を追加。
 
@@ -359,21 +359,21 @@ docker compose exec web bin/rails generate controller top index
 gem "rails-i18n"
 ```
 
-2. 依存関係をインストール。
+1. 依存関係をインストール。
 
 ```bash
 docker compose run --rm web bundle install
 # => Installing rails-i18n 7.0.10
 ```
 
-3. `config/application.rb` にデフォルトロケールを設定。
+1. `config/application.rb` にデフォルトロケールを設定。
 
 ```ruby
 # デフォルトロケールを日本語に設定
 config.i18n.default_locale = :ja
 ```
 
-4. `config/locales/ja.yml` を新規作成。
+1. `config/locales/ja.yml` を新規作成。
 
 #### 確認結果（Issue #19）
 
@@ -387,3 +387,63 @@ config.i18n.default_locale = :ja
 - `rails-i18n` gem により Rails 標準のバリデーションエラーメッセージが自動的に日本語化される。
 - `ja.yml` はアプリ固有の翻訳を追加するためのファイルとして作成。今後モデル追加のたびに翻訳を追記していく。
 - ロケール切り替え（多言語対応）が必要になった際は `around_action` と `I18n.with_locale` を使用する。
+
+### 2026-07-18 実施内容
+
+#### Issue #25: usersテーブルのマイグレーション作成
+
+#### 実施手順（Issue #25）
+
+1. マイグレーションファイルを生成。
+
+```bash
+docker compose exec web rails g migration CreateUsers email:string:uniq crypted_password:string salt:string name:string role:integer
+```
+
+1. 生成された `db/migrate/xxxxx_create_users.rb` を編集し、各カラムに `null: false`、`role` に `default: 0` を追加。
+
+```ruby
+class CreateUsers < ActiveRecord::Migration[7.2]
+  def change
+    create_table :users do |t|
+      t.string :email, null: false
+      t.string :crypted_password, null: false
+      t.string :salt, null: false
+      t.string :name, null: false
+      t.integer :role, null: false, default: 0
+
+      t.timestamps
+    end
+    add_index :users, :email, unique: true
+  end
+end
+```
+
+1. マイグレーションを実行。
+
+```bash
+docker compose exec web rails db:migrate
+```
+
+#### 発生した事象と対応（Issue #25）
+
+- マイグレーションファイル生成直後（`null: false` / `default: 0` 未追記の状態）で一度 `db:migrate` を実行してしまい、`db/schema.rb` に制約が反映されない状態になった。
+- Railsは実行済みマイグレーション（`schema_migrations` に記録済み）をファイル編集後も再実行しないため、`db:rollback` で一度戻し、編集済みの内容で `db:migrate` をやり直して解消した。
+
+```bash
+docker compose exec web rails db:rollback
+docker compose exec web rails db:migrate
+```
+
+#### 確認結果（Issue #25）
+
+- `db/schema.rb` に以下が反映されていることを確認。
+  - `email` / `crypted_password` / `salt` / `name` が `null: false`
+  - `role` が `null: false, default: 0`
+  - `email` にユニークインデックス（`index_users_on_email`）
+- 本番環境（Render + Neon）へのマージ・デプロイ後、Neonのテーブルエディタで同様の制約・インデックスが反映されていることを確認。
+
+#### 補足（Issue #25）
+
+- Sorceryの認証機能で使用する `crypted_password` / `salt` のカラム名は、Sorceryのデフォルト設定に合わせたもの（Issue #26で導入予定）。
+- マイグレーションファイルを手動編集する場合は、`db:migrate` 実行前に編集を完了させること（実行後の編集はDBに反映されない）。
