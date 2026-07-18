@@ -488,3 +488,52 @@ rm db/migrate/20260718075118_sorcery_core.rb
 #### 補足（Issue #26）
 
 - 本Issueのスコープは「Sorceryの導入・初期設定」までであり、`User` モデルへのバリデーション追加（`validates :email` 等）やログイン機能の実装は含まない。それらは後続のIssueで対応する。
+
+#### Issue #31: ヘッダー・フッターの共通レイアウト化（画面遷移のベース作成）
+
+#### 実施手順（Issue #31）
+
+1. 共通ヘッダーパーツ `app/views/shared/_header.html.erb` を作成。
+   - ロゴ（`root_path` へのリンク）を左に配置。
+   - `logged_in?` の値により、ナビゲーションの表示を出し分け。
+     - 未ログイン時：「新規登録」「ログイン」ボタンを表示。
+     - ログイン時：`current_user.name` とログアウトボタンを表示。
+2. 共通フッターパーツ `app/views/shared/_footer.html.erb` を作成。
+   - 「利用規約」「プライバシーポリシー」へのリンクを配置。
+3. `app/views/layouts/application.html.erb` の `<body>` 内を修正し、`yield` の前後に共通ヘッダー・フッターを描画するよう変更。
+
+```erb
+<%= render "shared/header" %>
+<%= yield %>
+<%= render "shared/footer" %>
+```
+
+1. `app/views/top/index.html.erb` から、Issue #22で実装していたヘッダー・フッターの記述を削除し、`<main>` のヒーローセクションのみを残す構成に変更（レイアウト側で共通化したため）。
+
+#### 認証系リンクの扱い（Issue #31）
+
+- ログイン・新規登録・ログアウトのリンク先は、対応する認証機能が未実装のため、いずれも `#`（仮リンク）とし、実装対象のIssue番号をTODOコメントで明記した。
+  - 「新規登録」→ Issue #27 実装後、`new_user_registration_path` 等に差し替え予定。
+  - 「ログイン」→ Issue #28 実装後、`new_user_session_path` 等に差し替え予定。
+  - 「ログアウト」→ Issue #29 実装後、`logout_path` 等に差し替え予定（`data: { turbo_method: :delete }` の付与も必要）。
+  - フッターの「利用規約」「プライバシーポリシー」→ Issue #44 / #45 実装後、それぞれ差し替え予定。
+
+#### テスト追加（Issue #31）
+
+- `spec/requests/top_spec.rb` に、共通ヘッダーがTOPページに正しく描画されることを検証するテストを追加。
+  - ヘッダーのロゴ（アプリ名）が表示されること。
+  - 未ログイン状態のため「ログイン」「新規登録」が表示されること。
+- ビューspec（`spec/views/top/index.html.erb_spec.rb`）ではなくリクエストspecで検証した理由：ビューspecは対象テンプレート単体をレンダリングし、レイアウト（`application.html.erb`）を経由しないため、レイアウト側に実装した共通ヘッダー・フッターの描画確認にはリクエストspecが適している。
+
+#### 確認結果（Issue #31）
+
+- ブラウザで `http://localhost:3000/` を表示し、以下を目視確認。
+  - 共通ヘッダー（ロゴ、未ログイン時の「新規登録」「ログイン」ボタン）が表示される。
+  - 共通フッター（「利用規約」「プライバシーポリシー」リンク）が表示される。
+- `docker compose exec web bin/rubocop` を実行し、`39 files inspected, no offenses detected` を確認。
+- `docker compose exec web bundle exec rspec` を実行し、`7 examples, 0 failures, 3 pending` を確認（pending 3件はIssue #31とは無関係の既存の自動生成スタブ）。
+
+#### 補足（Issue #31）
+
+- ヘッダー・フッターを `app/views/shared/` 配下の共通パーツとして切り出したことで、今後追加する全ページで同一のヘッダー・フッターが自動的に適用される。
+- `logged_in?` / `current_user` はSorcery導入時（Issue #26）に `ActionController::Base` へ組み込まれており、追加の設定なしにビューから利用できる。
