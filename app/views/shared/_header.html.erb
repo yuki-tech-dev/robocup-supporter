@@ -7,8 +7,7 @@
       <%# TODO: Issue #29でログアウト機能実装後、logout_pathに差し替え、data: { turbo_method: :delete }を付与する %>
       <%= link_to "ログアウト", "#", class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
     <% else %>
-      <%# TODO: Issue #27でサインアップ機能実装後、new_user_registration_path等に差し替える %>
-      <%= link_to "新規登録", "#", class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
+      <%= link_to "新規登録", new_user_path, class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
       <%# TODO: Issue #28でログイン機能実装後、new_user_session_path等に差し替える %>
       <%= link_to "ログイン", "#", class: "bg-white text-gray-800 px-5 py-2 rounded hover:bg-gray-100 transition" %>
     <% end %>
