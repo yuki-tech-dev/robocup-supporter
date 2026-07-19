@@ -1,0 +1,15 @@
+<% flash.each do |message_type, message| %>
+  <%
+    # キーに応じてTailwindの背景色を切り替える
+    alert_class = case message_type.to_s
+                  when "notice", "success" then "bg-green-500"
+                  when "alert", "danger" then "bg-red-500"
+                  when "warning" then "bg-yellow-500"
+                  else "bg-blue-500"
+                  end
+  %>
+
+  <div class="<%= alert_class %> text-white p-4 my-2 rounded-t-sm">
+    <%= message %>
+  </div>
+<% end %>
