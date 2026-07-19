@@ -1,0 +1,11 @@
+<%# バリデーションエラーの共通表示パーシャル。form_withのobjectを渡して使う %>
+<% if object.errors.any? %>
+  <div class="bg-red-100 border border-red-300 text-red-700 rounded-2xl p-4 my-4">
+    <p class="font-bold mb-2"><%= object.errors.count %>件のエラーが発生しました</p>
+    <ul class="list-disc list-inside">
+      <% object.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
