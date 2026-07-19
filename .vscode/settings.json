@@ -1,6 +1,24 @@
 {
-  "cSpell.words": [
-    "dearmor",
-    "nodesource"
-  ]
+  "cSpell.words": ["dearmor", "nodesource"],
+  "tailwindCSS.includeLanguages": {
+    "erb": "html"
+  },
+  "files.associations": {
+    "*.html.erb": "erb"
+  },
+  "[ruby]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[erb]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/tmp": true,
+    "**/log": true,
+    "**/vendor/bundle": true,
+    "**/public/assets": true
+  }
 }
