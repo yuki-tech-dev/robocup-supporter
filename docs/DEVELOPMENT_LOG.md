@@ -578,3 +578,43 @@ rm db/migrate/20260718075118_sorcery_core.rb
 
 - `message_type` がどのケースにも該当しない場合は `else` で `bg-blue-500`（notice/infoに近い色）にフォールバックするようにし、想定外のflashキーが来ても表示崩れが起きないようにした。
 - 今後、`redirect_to root_path, notice: "..."` のようにコントローラ側でflashをセットするだけで、この共通コンポーネントがそのまま利用できる（Issue #27〜29のサインアップ・ログイン・ログアウト実装時に活用予定）。
+
+#### Issue #27: 新規ユーザー登録機能（Sign up）
+
+#### 実施手順（Issue #27）
+
+1. ルーティング追加: `resources :users, only: %i[new create]`
+2. `UsersController` を新規作成（`new`/`create`アクション、`user_params`でStrong Parameters制限）
+3. `User`モデルにバリデーションを追加（`name`/`email`の必須・一意性チェック、Sorceryの仮想属性を考慮した`password`の条件付き文字数・確認一致チェック）
+4. `app/views/users/new.html.erb` を新規作成し、Tailwind CSSでスタイリング
+5. `config/locales/ja.yml` にラベル・フラッシュメッセージ等の文言を追加し、使っていない汎用文言は削除
+6. `app/views/shared/_error_messages.html.erb` を新規作成し、バリデーションエラー一覧を表示
+
+#### 発生した事象と対応（Issue #27）
+
+- クラス名を`UserController`（単数形）としてしまい、ファイル名`users_controller.rb`との不一致でZeitwerkのオートロードが破綻し、`TypeError: superclass mismatch`が発生 → `UsersController`（複数形）に修正して解消。
+- `user_params`が当初`crypted_password`/`salt`を直接permitしていたが、これらはSorceryがパスワードのハッシュ化時に内部で使うカラムであり、フォームが直接扱うべきは仮想属性の`password`/`password_confirmation`だった → 許可する属性を修正。
+- パスワードの条件付きバリデーションで、`changes[:password_digest]`（`has_secure_password`由来の書き方）や`changes[:password_confirmation]`のように、DBに存在しない仮想属性に対して`changes`（ActiveRecordの実カラムの変更検知の仕組み）を使おうとしており機能しない状態だった → `password.present?`で仮想属性自体の値を直接判定する方式に修正。
+- `ApplicationController`に`before_action :require_login`を追加した結果、ログイン機能（Issue #28）が未実装のままTOPページを含む全ページが未定義の`login_path`へリダイレクトを試み、`NameError`が発生 → Issue #28実装までは`before_action`をコメントアウトして保留することにした。
+- `f.label`が日本語化されない事象が発生。原因はRailsのラベル翻訳キーの検索順序で、モデル名でスコープされた`helpers.label.user.email`のような階層が必要だったため（`helpers.label.email`のようなフラット構造では拾われない）→ `ja.yml`の階層を修正して解消。
+- バリデーションエラーメッセージの属性名部分が英語のままだった。原因は`activerecord.attributes.user.*`が未定義だったため → 追加して解消。
+- フォームのスタイリングがBootstrapのクラス（`container`/`row`/`form-control`/`btn btn-primary`等）のままになっており、Tailwind CSSを採用している本プロジェクトでは効いていなかった → Tailwindのユーティリティクラスに書き換え。
+
+#### テスト追加（Issue #27）
+
+- `spec/factories/users.rb`が空定義のままだったため、`email`（sequence）/`name`/`password`/`password_confirmation`のデフォルト値を追加。
+- `spec/rails_helper.rb`の`RSpec.configure`に`config.include FactoryBot::Syntax::Methods`が設定されておらず、request specで`attributes_for`等のFactoryBotメソッドが使えなかった → 追加して解消。
+- `spec/requests/users_spec.rb`を新規作成。GET `/users/new`（200・タイトル表示）、POST `/users`（正常系: 作成＋リダイレクト、異常系: 作成されずエラー表示）の計4件。
+
+#### 確認結果（Issue #27）
+
+- ブラウザで正常系（登録成功→TOPページへリダイレクト＋成功フラッシュ表示）・異常系（空欄送信→エラー一覧表示）を確認。
+- `docker compose exec web bundle exec rubocop`: 41 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 12 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`、Rails 7.2の保守期限に関する一般的な注意喚起のみ）。CIでは`--except EOLRails`で除外済みのため実質0件。
+
+#### 補足（Issue #27）
+
+- `app/views/shared/_error_messages.html.erb`を`shared/`配下の共通パーツとして作成したため、Issue #28（ログイン機能）でも再利用できる。
+- ヘッダーの新規登録リンク（`_header.html.erb`）を仮リンク（`"#"`）から`new_user_path`に差し替え、対応するTODOコメントを削除。
+- ログインページへのリンク（`users/new.html.erb`内）は`login_path`が未実装のため仮リンク（`"#"`）のままとし、TODOコメントでIssue #28を明記。
