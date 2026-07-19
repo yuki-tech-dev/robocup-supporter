@@ -54,7 +54,7 @@
 
 #### 次のステップ
 
-1. （私）`docs/INITIAL_SETUP.md` に修正内容を追記しました。
+1. （私）`docs/DEVELOPMENT_LOG.md` に修正内容を追記しました。
 2. （ユーザー）以下を実行してアプリを初期化／起動してください（コマンドはユーザー実行）:
 
 ```bash
@@ -537,3 +537,44 @@ rm db/migrate/20260718075118_sorcery_core.rb
 
 - ヘッダー・フッターを `app/views/shared/` 配下の共通パーツとして切り出したことで、今後追加する全ページで同一のヘッダー・フッターが自動的に適用される。
 - `logged_in?` / `current_user` はSorcery導入時（Issue #26）に `ActionController::Base` へ組み込まれており、追加の設定なしにビューから利用できる。
+
+### 2026-07-19 実施内容
+
+#### Issue #32: フラッシュメッセージ共通コンポーネント作成
+
+#### 実施手順（Issue #32）
+
+1. `app/views/shared/_flash_message.html.erb` に、`flash.each` でメッセージタイプ（`notice`/`alert`/`success`/`danger`/`warning`）ごとにTailwindの背景色（緑・赤・黄）を出し分ける`case/when`を実装。該当しないタイプは`bg-blue-500`にフォールバック。
+2. `app/views/layouts/application.html.erb` の共通ヘッダー直後にpartialを組み込み。
+
+```erb
+<%= render "shared/header" %>
+<%= render "shared/flash_message" %>
+<%= yield %>
+<%= render "shared/footer" %>
+```
+
+1. `TopController#index` に `flash[:notice] = "test"` を一時的に追加し、ブラウザで表示・配色を確認後、動作確認用コードは削除。
+
+#### 発生した事象と対応（Issue #32）
+
+- 実装初期の `class="alert alert-<%= message_type %>"` は Bootstrap のクラス命名（`alert alert-notice` 等）を踏襲したものだったが、本プロジェクトは Tailwind CSS のため、これらのクラスには対応するスタイル定義が存在せず、見た目に反映されなかった。Tailwindのユーティリティクラス（`bg-green-500` 等）を直接出し分ける方式に変更した。
+- `case/when` の分岐で `when "warning", "danger" then "bg-yellow-500"` としており、`"danger"` が直前の `when "alert", "danger" then "bg-red-500"` と重複していた（`case/when` は上から評価されるため、`danger` は常に赤色の分岐に一致し、黄色の分岐には到達しない dead code だった）。`warning` のみを残す形に修正。
+- Tailwindのクラス名に `rou` という誤字があり（`rounded-2xl` の書き損じ）、角丸が適用されていなかった。修正して解消。
+- 見た目に影響しない `alert` という素のクラス（Bootstrap由来の名残）が残っていたため、使い道が無いことを確認のうえ削除し、`class`属性をシンプルにした。
+
+#### テスト追加（Issue #32）
+
+- `spec/views/shared/_flash_message.html.erb_spec.rb` を新規作成し、`type: :view` でpartial単体をテスト（`flash[:notice]`をセットして`render`し、表示文言を検証）。
+- request specではなくview specを採用した理由：`flash`はリダイレクトを経由して初めて次のリクエストに引き継がれる仕組みのため、request specで`get "/"`する前に直接`flash`をセットする手段が無い。view specであれば`flash[:notice] = "..."`をセットしてから`render`するだけでpartial単体の表示確認ができる。
+
+#### 確認結果（Issue #32）
+
+- ブラウザで `flash[:notice]`（緑）・`flash[:alert]`（赤）・`flash[:warning]`（黄）の3種類の配色を目視確認。
+- `docker compose exec web bundle exec rubocop` を実行し、`39 files inspected, no offenses detected` を確認。
+- `docker compose exec web bundle exec rspec` を実行し、`8 examples, 0 failures, 3 pending` を確認（pending 3件は本Issueとは無関係の既存の自動生成スタブ）。
+
+#### 補足（Issue #32）
+
+- `message_type` がどのケースにも該当しない場合は `else` で `bg-blue-500`（notice/infoに近い色）にフォールバックするようにし、想定外のflashキーが来ても表示崩れが起きないようにした。
+- 今後、`redirect_to root_path, notice: "..."` のようにコントローラ側でflashをセットするだけで、この共通コンポーネントがそのまま利用できる（Issue #27〜29のサインアップ・ログイン・ログアウト実装時に活用予定）。
