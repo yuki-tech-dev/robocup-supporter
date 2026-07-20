@@ -22,7 +22,6 @@
     <%= f.submit class: "w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-700 transition cursor-pointer" %>
   <% end %>
   <div class="text-center mt-4">
-    <%# TODO: Issue #28でログイン機能実装後、new_user_session_path等に差し替える %>
-    <%= link_to t('.to_login_page'), "#" %>
+    <%= link_to t('.to_login_page'), login_path %>
   </div>
 </div>
