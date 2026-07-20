@@ -618,3 +618,38 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - `app/views/shared/_error_messages.html.erb`を`shared/`配下の共通パーツとして作成したため、Issue #28（ログイン機能）でも再利用できる。
 - ヘッダーの新規登録リンク（`_header.html.erb`）を仮リンク（`"#"`）から`new_user_path`に差し替え、対応するTODOコメントを削除。
 - ログインページへのリンク（`users/new.html.erb`内）は`login_path`が未実装のため仮リンク（`"#"`）のままとし、TODOコメントでIssue #28を明記。
+
+#### Issue #28: ログイン機能（Sign in）＆自動ログイン保持
+
+#### 実施手順（Issue #28）
+
+1. ルーティング追加: `get "login"` / `post "login"` / `delete "logout"`（`user_sessions#new/create/destroy`）
+2. `UserSessionsController`を新規作成（`new`/`create`/`destroy`、`skip_before_action :require_login, only: %i[new create]`）。`create`はSorceryの`login(email, password)`メソッドで認証・セッション管理を任せる方式にした（手動での`session[:user_id] = ...`は行わない）
+3. `remember_me`サブモジュールを有効化: `config/initializers/sorcery.rb`の`submodules = [ :remember_me ]`、`db/migrate/20260719010000_add_remember_me_to_users.rb`を作成し`remember_me_token`/`remember_me_token_expires_at`カラムを追加
+4. `UserSessionsController#create`に`remember_me! if params[:remember_me] == "1"`を追加
+5. `app/views/user_sessions/new.html.erb`を新規作成（`form_with url: login_path`、モデル非依存の`*_field_tag`、remember_meチェックボックス付き）。パスワード再設定はMVP範囲外のため、リンクごとコメントアウトしTODOで理由を明記
+6. `_header.html.erb`のログイン/ログアウトリンクを`login_path`/`logout_path`（ログアウトは`data: { turbo_method: :delete }`）に差し替え
+7. `ApplicationController`の`before_action :require_login`が既に有効化されていたため、`TopController`に`skip_before_action :require_login, only: %i[index]`を追加し、TOPページを未ログインでも閲覧可能にした
+
+#### 発生した事象と対応（Issue #28）
+
+- `login`メソッドを`User.find_by(...).login(...)`のようにモデルのインスタンスに対して呼ぼうとする誤った書き方をしてしまった。Sorceryの`login`/`logout`/`remember_me!`は`authenticates_with_sorcery!`を宣言したコントローラー側で使えるメソッドであり、モデルのインスタンスメソッドではないため、コントローラー内で直接呼び出す形に修正。
+- ヘッダーの「ログアウト」リンクをクリックすると`Routing Error: No route matches [GET] "/logout"`が発生。原因は`app/javascript/application.js`の中身が空（コメントのみ）で、`@hotwired/turbo-rails`がimportされておらず、Turboが一切機能していなかったため。`data: { turbo_method: :delete }`はTurboがクリックをフックしてDELETEリクエストに変換する仕組みなので、Turbo未導入だと通常の`<a>`タグとして扱われブラウザ標準のGETリクエストが飛んでしまう。`Gemfile`には`turbo-rails`gemが既に入っていたが、esbuild構成のためフロントエンド側の対応するnpmパッケージ・importが漏れていたことが原因と判明。`npm install @hotwired/turbo-rails`を実行し、`application.js`に`import "@hotwired/turbo-rails"`を追記して解消。
+
+#### テスト追加（Issue #28）
+
+- `spec/requests/user_sessions_spec.rb`を新規作成。GET `/login`（200・タイトル表示）、POST `/login`正常系（ログイン成功→リダイレクト＋ヘッダーがログアウト表示に切り替わる）・異常系（誤ったパスワード→失敗メッセージ表示）、DELETE `/logout`（ログアウト成功→リダイレクト＋ヘッダーが新規登録表示に戻る）の計5件。
+- 当初`DELETE /logout`のテストで`expect(response.body).not_to include("ログアウト")`としていたが、ログアウト成功時のフラッシュメッセージ自体が「ログアウトしました」という文言で"ログアウト"を含むため誤って失敗する状態だった → 未ログイン状態特有の文言（「新規登録」リンクの表示）で検証する形に修正して解消。
+
+#### 確認結果（Issue #28）
+
+- ブラウザで新規登録→ログアウト→ログイン→remember_meチェックの一連の流れを確認。ログイン後はヘッダーがユーザー名＋ログアウト表示に切り替わり、remember_meチェックを入れてログインすると`remember_me_token`Cookieが有効期限付きで発行されることを開発者ツールで確認。
+- `docker compose exec web bin/rubocop`: 45 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 17 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CIでは除外済みのため実質0件）
+
+#### 補足（Issue #28）
+
+- パスワード再設定機能はMVP範囲外と判断し、実装しないことに決定。`user_sessions/new.html.erb`のリンクはコメントアウトし、TODOコメントに理由を明記（将来Issue化する場合に有効化する想定）。
+- ログアウト機能（ヘッダーのログアウトボタン）まで含めて本Issueで完成させた（Issue #29は残タスクなしのため実質クローズ扱い）。
+- ログイン成功後のリダイレクトはフレンドリーフォワーディングを実装せず、`root_path`固定のシンプルな方式とした。
