@@ -1,0 +1,26 @@
+<% content_for(:title, t(".title")) %>
+<div class="max-w-md mx-auto mt-10 px-6">
+  <h1 class="text-2xl font-bold mb-6 text-center"><%= t(".title") %></h1>
+  <%= form_with url: login_path, method: :post do %>
+    <div class="mb-4">
+      <%= label_tag :email, t("activerecord.attributes.user.email"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= email_field_tag :email, params[:email], class: "w-full border border-gray-300 rounded px-3 py-2" %>
+    </div>
+    <div class="mb-4">
+      <%= label_tag :password, t("activerecord.attributes.user.password"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= password_field_tag :password, nil, class: "w-full border border-gray-300 rounded px-3 py-2" %>
+    </div>
+    <div class="mb-6 flex items-center">
+      <%= check_box_tag :remember_me, "1", false, class: "mr-2" %>
+      <%= label_tag :remember_me, "ログイン状態を保持する", class: "text-sm text-gray-700" %>
+    </div>
+    <%= submit_tag t(".login"), class: "w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-700 transition cursor-pointer" %>
+  <% end %>
+  <div class="text-center mt-4">
+    <%= link_to t(".to_register_page"), new_user_path %>
+  </div>
+  <div class="text-center mt-2 text-sm text-gray-500">
+    <%# TODO: MVPリリース後にパスワードリセット機能実装後、該当パスに差し替える %>
+    <%#= link_to t(".password_forget"), "#" %>
+  </div>
+</div>

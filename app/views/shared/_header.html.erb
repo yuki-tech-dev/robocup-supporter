@@ -4,12 +4,10 @@
   <nav class="flex gap-3">
     <% if logged_in? %>
       <span class="text-white px-3 py-2"><%= current_user.name %></span>
-      <%# TODO: Issue #29でログアウト機能実装後、logout_pathに差し替え、data: { turbo_method: :delete }を付与する %>
-      <%= link_to "ログアウト", "#", class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
+      <%= link_to "ログアウト", logout_path, data: { turbo_method: :delete }, class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
     <% else %>
       <%= link_to "新規登録", new_user_path, class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
-      <%# TODO: Issue #28でログイン機能実装後、new_user_session_path等に差し替える %>
-      <%= link_to "ログイン", "#", class: "bg-white text-gray-800 px-5 py-2 rounded hover:bg-gray-100 transition" %>
+      <%= link_to "ログイン", login_path, class: "bg-white text-gray-800 px-5 py-2 rounded hover:bg-gray-100 transition" %>
     <% end %>
   </nav>
 </header>
