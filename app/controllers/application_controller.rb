@@ -3,7 +3,7 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
 
   helper_method :logged_in?, :current_user
-  # before_action :require_login
+  before_action :require_login
   add_flash_types :success, :danger
 
   def logged_in?
@@ -21,7 +21,7 @@ class ApplicationController < ActionController::Base
 
   private
 
-  # def require_login
-  #   redirect_to login_path, danger: t('defaults.flash_message.require_login') unless logged_in?
-  # end
+  def require_login
+    redirect_to login_path, danger: t("defaults.flash_message.require_login") unless logged_in?
+  end
 end
