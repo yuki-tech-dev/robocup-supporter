@@ -653,3 +653,30 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - パスワード再設定機能はMVP範囲外と判断し、実装しないことに決定。`user_sessions/new.html.erb`のリンクはコメントアウトし、TODOコメントに理由を明記（将来Issue化する場合に有効化する想定）。
 - ログアウト機能（ヘッダーのログアウトボタン）まで含めて本Issueで完成させた（Issue #29は残タスクなしのため実質クローズ扱い）。
 - ログイン成功後のリダイレクトはフレンドリーフォワーディングを実装せず、`root_path`固定のシンプルな方式とした。
+
+#### Issue #29の完了確認（2026-07-21）
+
+- Issue #28で実装済みの内容がIssue #29（ログアウト機能）の実装内容・完了条件をすべて満たしていることを再確認した（`UserSessionsController#destroy`・ルーティング・ヘッダーのログアウトリンク・フラッシュメッセージ＋リダイレクト）。
+- 唯一、ログアウト成功時のフラッシュメッセージ文言「ログアウトしました」自体を直接検証するテストが無い点が抜けていたため、Issue #30の対応と合わせてテストを追加することにした。
+- 上記確認をもってIssue #29はクローズ。
+
+#### Issue #30: ユーザーロール（権限）定義の追加
+
+#### 実施手順（Issue #30）
+
+1. `role`カラム自体はIssue #25の`create_users`マイグレーションで既に追加済み（`integer`型、`null: false`、`default: 0`）だったため、新規マイグレーションは不要と判断。
+2. `User`モデルに`enum :role, { member: 0, staff: 1, admin: 2 }`を追加。
+3. `docker compose exec web bin/rails c`で`user.staff!`→`user.staff?`、`User.new.member?`の動作確認を実施。
+
+#### 決定事項（Issue #30）
+
+- Issue本文では`parent`/`staff`の2ロール想定だったが、将来「保護者（member）」「ボランティアスタッフ（staff）」「運営管理者（admin）」の3段階で認可を出し分ける想定があるため、`member`/`staff`/`admin`の3ロールに拡張することにした。
+- 数値の割り当ては権限が弱い順に0から採番（`member: 0, staff: 1, admin: 2`）。デフォルト値が最も弱い権限になるようにすることで、実装漏れによる意図しない権限昇格を防ぐ狙い。
+
+#### 発生した事象と対応（Issue #30）
+
+- `enum role: { member: 0, staff: 1, admin: 2 }`というキーワード引数スタイルで最初に実装したが、Rails 7.2の`enum`はこの書き方だと非推奨警告（Rails 8.0で削除予定）が出る仕様だったため、位置引数スタイル`enum :role, { member: 0, staff: 1, admin: 2 }`に修正した。
+
+#### 確認結果（Issue #30）
+
+- コンソールで`user.staff!`実行後`user.staff?` => `true`、`User.new.member?` => `true`を確認。デフォルト値が`member`になっていることも確認済み。
