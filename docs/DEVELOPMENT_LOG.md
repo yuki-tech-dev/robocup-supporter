@@ -692,3 +692,40 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - `schedules`テーブルには`user_id`等の外部キーを意図的に持たせていない（管理者であれば誰でも予定を作成できる想定のため）。
 - ER図・テーブル定義の詳細は`/memories/repo/schema.md`（リポジトリメモリ）にも記録済み。
 - ブランチ`feat/issue-33-schedules-migration`で作業。コミットは「feat: schedulesテーブルのマイグレーションを作成」「feat: Scheduleモデルとバリデーションを追加」「test: schedule用のFactoryBotを追加」の3分割で実施。
+
+#### Issue #34: 予定の新規登録機能の作成（C：Create）
+
+#### 実施手順（Issue #34）
+
+1. Issue本文にまだ残っていた`date`/`time`表記を、`#33`で確定した`start_time`/`end_time`（datetime）に合わせてGitHub上で修正
+2. `config/routes.rb`に`resources :schedules, only: %i[new create]`を追加
+3. `app/controllers/schedules_controller.rb`を新規作成（`new`/`create`アクション、ストロングパラメーターでER図の5項目を許可）
+4. `config/locales/ja.yml`に`activerecord.attributes.schedule.*`・`helpers.label.schedule.*`・`schedules.new`/`schedules.create`の文言を追加
+5. `app/views/schedules/new.html.erb`を新規作成（Tailwind CSSで、50代〜60代のスタッフでも押しやすい大きめの入力欄・ボタンサイズに調整、`start_time`/`end_time`は`datetime_field`、`description`は`text_area`を使用）
+6. ブラウザで正常系（5項目入力→保存→トップページへリダイレクト＋成功フラッシュ表示）・異常系（`title`/`start_time`未入力→画面遷移せずエラー表示）を確認
+7. `spec/requests/schedules_spec.rb`を新規作成（GET `/schedules/new`、POST `/schedules`正常系・異常系の計4件）
+8. `docker compose exec web bin/rubocop`・`bundle exec rspec`を実行し、既存テストへの影響がないことを確認
+
+#### 発生した事象と対応（Issue #34）
+
+- 異常系の確認時、`title`を空にして送信すると「タイトルは3文字以上で入力してください」と「タイトルを入力してください」の2件のエラーメッセージが同時に表示される事象が発生。原因は`title`に対して`presence: true`と`length: { within: 3..30 }`を別々に定義しており、値が空の場合は両方のバリデーションがそれぞれ反応してしまうため（Rubyの`||`のような早期リターンは無く、定義したバリデーションは基本的にすべて評価される）。`length`のオプションに`allow_blank: true`を追加し、値が空の場合は`length`チェックをスキップするよう修正して解消。
+
+#### テスト追加（Issue #34）
+
+- `spec/requests/schedules_spec.rb`を新規作成。`#34`から`schedules`系のページは`require_login`が有効（管理機能のため）なので、`before`ブロックで`post login_path`を実行しログイン状態を作ってから各テストを実行する構成にした。
+  - GET `/schedules/new`: 200が返ること／「予定の新規登録」というタイトルが表示されること
+  - POST `/schedules`（正常系）: `Schedule`件数が1件増えること／`root_path`へリダイレクトされること／成功フラッシュ（「予定を登録しました」）が表示されること
+  - POST `/schedules`（異常系）: `Schedule`件数が変わらないこと／失敗フラッシュ（「予定の登録に失敗しました」）が表示されること
+
+#### 確認結果（Issue #34）
+
+- ブラウザで正常系・異常系（`title`/`start_time`未入力時のエラー表示、修正後は重複メッセージが解消されていることも含む）を確認。
+- `docker compose exec web bin/rubocop`: 49 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 21 examples, 0 failures, 3 pending（既存の無関係スタブ）
+
+#### 補足（Issue #34）
+
+- 新規登録画面への導線（ヘッダー等からのリンク）はまだ設置していない。`#35`（カレンダーUI）実装時に、カレンダー画面から「新規登録」ボタンを設置する方針にまとめて対応する。
+- カレンダーの特定の日付をクリックした際に、その日付が事前入力された状態で登録フォームに遷移するUXを`#35`で検討する方針で合意（`new_schedule_path(date: ...)`のようなクエリパラメータを想定）。
+- `#35`・`#36`のIssue本文にも`date`/`time`という古いカラム名の記載が残っているため、それぞれのIssue着手時に本文修正が必要。
+- ブランチ`feat/issue-34-schedule-create`で作業。
