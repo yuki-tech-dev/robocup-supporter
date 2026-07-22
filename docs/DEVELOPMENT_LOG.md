@@ -654,29 +654,41 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - ログアウト機能（ヘッダーのログアウトボタン）まで含めて本Issueで完成させた（Issue #29は残タスクなしのため実質クローズ扱い）。
 - ログイン成功後のリダイレクトはフレンドリーフォワーディングを実装せず、`root_path`固定のシンプルな方式とした。
 
-#### Issue #29の完了確認（2026-07-21）
+### 2026-07-22 実施内容
 
-- Issue #28で実装済みの内容がIssue #29（ログアウト機能）の実装内容・完了条件をすべて満たしていることを再確認した（`UserSessionsController#destroy`・ルーティング・ヘッダーのログアウトリンク・フラッシュメッセージ＋リダイレクト）。
-- 唯一、ログアウト成功時のフラッシュメッセージ文言「ログアウトしました」自体を直接検証するテストが無い点が抜けていたため、Issue #30の対応と合わせてテストを追加することにした。
-- 上記確認をもってIssue #29はクローズ。
+#### Issue #33: schedulesテーブルのマイグレーション作成
 
-#### Issue #30: ユーザーロール（権限）定義の追加
+#### 実施手順（Issue #33）
 
-#### 実施手順（Issue #30）
+1. ER図とIssue本文のカラム構成を突き合わせ、食い違いを確認（後述）
+2. `docker compose exec web rails g migration CreateSchedules title:string start_time:datetime end_time:datetime location:string description:text` でマイグレーションファイルを生成
+3. `title`/`start_time`に`null: false`、`title`に`default: "練習会"`を追記し、`docker compose exec web rails db:migrate`を実行して`db/schema.rb`への反映を確認
+4. `app/models/schedule.rb`を新規作成し、バリデーションを追加（`title`: 必須＋3〜30文字、`start_time`: 必須、`location`/`description`: 255文字以内）
+5. `spec/factories/schedules.rb`を新規作成
+6. `docker compose exec web bin/rubocop -A`・`bundle exec rspec`を実行し、既存テストへの影響がないことを確認
 
-1. `role`カラム自体はIssue #25の`create_users`マイグレーションで既に追加済み（`integer`型、`null: false`、`default: 0`）だったため、新規マイグレーションは不要と判断。
-2. `User`モデルに`enum :role, { member: 0, staff: 1, admin: 2 }`を追加。
-3. `docker compose exec web bin/rails c`で`user.staff!`→`user.staff?`、`User.new.member?`の動作確認を実施。
+#### 発生した事象と対応（Issue #33）
 
-#### 決定事項（Issue #30）
+- Issue本文は当初`date`（date型）＋`time`（time型）の2カラム構成で、予定の終了時刻を管理するカラムが存在しない内容だったが、ER図では`start_time`／`end_time`（共にdatetime）の2カラム構成だったため食い違いが判明。ER図を正としてユーザーがGitHub上でIssue本文を修正（`start_time`／`end_time`のdatetime構成に変更）。
+- マイグレーション生成コマンドで属性指定の区切りにカンマを入れてしまうと（`title:string, start_time:datetime, ...`）、シェルが引数を分割する際にカンマが型名にくっついて渡ってしまい正しく解釈されない → スペース区切りに修正。
+- マイグレーション名を単に`Schedules`にすると、Railsのジェネレータは名前のパターン（`CreateXxx`／`AddXxxToYyy`／`RemoveXxxFromYyy`）に応じて生成内容を変える仕組みのため、`add_column`が生成されてしまい、存在しないテーブルへの列追加になり失敗する → `CreateSchedules`に修正し、`create_table`ブロックが正しく生成されることを確認。
+- `t.datetime :start_time, null: false, default: 13:30`のように時刻リテラルをクォートせず記述しており、Rubyの構文として不正な状態だった → `"2000-01-01 13:30:00"`のように文字列でクォートする必要があると気づき修正（最終的に`start_time`／`end_time`自体には`default`値を設定しない方針にした）。
+- `validates :title, length: { minimum: 3 }, length: { maximum: 30 }, presence: true`のように、同一メソッド呼び出し内で`length:`キーを2回指定してしまい、Rubyのハッシュの仕様上、後に書いた`maximum`側で上書きされ`minimum`の指定が無効化されていた → `length: { within: 3..30 }`に統合して解消。
+- `bin/rubocop -A`実行時、`schedule.rb`のクラス本体先頭に余分な空行があり`Layout/EmptyLinesAroundClassBody`で指摘・自動修正された。
 
-- Issue本文では`parent`/`staff`の2ロール想定だったが、将来「保護者（member）」「ボランティアスタッフ（staff）」「運営管理者（admin）」の3段階で認可を出し分ける想定があるため、`member`/`staff`/`admin`の3ロールに拡張することにした。
-- 数値の割り当ては権限が弱い順に0から採番（`member: 0, staff: 1, admin: 2`）。デフォルト値が最も弱い権限になるようにすることで、実装漏れによる意図しない権限昇格を防ぐ狙い。
+#### テスト追加（Issue #33）
 
-#### 発生した事象と対応（Issue #30）
+- `spec/factories/schedules.rb`を新規作成（`title`／`start_time`／`end_time`／`location`／`description`にダミー値を設定し、`create(:schedule)`で有効なレコードがすぐ作れるようにした）。
+- Issue #33自体は画面を追加しないIssueのため、リポジトリのMVPテスト方針（画面追加ごとにrequest spec 1本）には該当せず、今回はRailsコンソールでのバリデーション動作確認に留めた（request/model specはIssue #34以降で必要に応じて追加）。
 
-- `enum role: { member: 0, staff: 1, admin: 2 }`というキーワード引数スタイルで最初に実装したが、Rails 7.2の`enum`はこの書き方だと非推奨警告（Rails 8.0で削除予定）が出る仕様だったため、位置引数スタイル`enum :role, { member: 0, staff: 1, admin: 2 }`に修正した。
+#### 確認結果（Issue #33）
 
-#### 確認結果（Issue #30）
+- Railsコンソールで`Schedule.new.valid?`が`false`（必須項目`title`／`start_time`が空のため）、`Schedule.new(title: "練習会", start_time: Time.current).valid?`が`true`（必須項目が埋まっているため）となることを確認。
+- `docker compose exec web bin/rubocop`: 47 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 17 examples, 0 failures, 3 pending（既存の無関係スタブ）
 
-- コンソールで`user.staff!`実行後`user.staff?` => `true`、`User.new.member?` => `true`を確認。デフォルト値が`member`になっていることも確認済み。
+#### 補足（Issue #33）
+
+- `schedules`テーブルには`user_id`等の外部キーを意図的に持たせていない（管理者であれば誰でも予定を作成できる想定のため）。
+- ER図・テーブル定義の詳細は`/memories/repo/schema.md`（リポジトリメモリ）にも記録済み。
+- ブランチ`feat/issue-33-schedules-migration`で作業。コミットは「feat: schedulesテーブルのマイグレーションを作成」「feat: Scheduleモデルとバリデーションを追加」「test: schedule用のFactoryBotを追加」の3分割で実施。
