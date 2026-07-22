@@ -653,3 +653,42 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - パスワード再設定機能はMVP範囲外と判断し、実装しないことに決定。`user_sessions/new.html.erb`のリンクはコメントアウトし、TODOコメントに理由を明記（将来Issue化する場合に有効化する想定）。
 - ログアウト機能（ヘッダーのログアウトボタン）まで含めて本Issueで完成させた（Issue #29は残タスクなしのため実質クローズ扱い）。
 - ログイン成功後のリダイレクトはフレンドリーフォワーディングを実装せず、`root_path`固定のシンプルな方式とした。
+
+### 2026-07-22 実施内容
+
+#### Issue #33: schedulesテーブルのマイグレーション作成
+
+#### 実施手順（Issue #33）
+
+1. ER図とIssue本文のカラム構成を突き合わせ、食い違いを確認（後述）
+2. `docker compose exec web rails g migration CreateSchedules title:string start_time:datetime end_time:datetime location:string description:text` でマイグレーションファイルを生成
+3. `title`/`start_time`に`null: false`、`title`に`default: "練習会"`を追記し、`docker compose exec web rails db:migrate`を実行して`db/schema.rb`への反映を確認
+4. `app/models/schedule.rb`を新規作成し、バリデーションを追加（`title`: 必須＋3〜30文字、`start_time`: 必須、`location`/`description`: 255文字以内）
+5. `spec/factories/schedules.rb`を新規作成
+6. `docker compose exec web bin/rubocop -A`・`bundle exec rspec`を実行し、既存テストへの影響がないことを確認
+
+#### 発生した事象と対応（Issue #33）
+
+- Issue本文は当初`date`（date型）＋`time`（time型）の2カラム構成で、予定の終了時刻を管理するカラムが存在しない内容だったが、ER図では`start_time`／`end_time`（共にdatetime）の2カラム構成だったため食い違いが判明。ER図を正としてユーザーがGitHub上でIssue本文を修正（`start_time`／`end_time`のdatetime構成に変更）。
+- マイグレーション生成コマンドで属性指定の区切りにカンマを入れてしまうと（`title:string, start_time:datetime, ...`）、シェルが引数を分割する際にカンマが型名にくっついて渡ってしまい正しく解釈されない → スペース区切りに修正。
+- マイグレーション名を単に`Schedules`にすると、Railsのジェネレータは名前のパターン（`CreateXxx`／`AddXxxToYyy`／`RemoveXxxFromYyy`）に応じて生成内容を変える仕組みのため、`add_column`が生成されてしまい、存在しないテーブルへの列追加になり失敗する → `CreateSchedules`に修正し、`create_table`ブロックが正しく生成されることを確認。
+- `t.datetime :start_time, null: false, default: 13:30`のように時刻リテラルをクォートせず記述しており、Rubyの構文として不正な状態だった → `"2000-01-01 13:30:00"`のように文字列でクォートする必要があると気づき修正（最終的に`start_time`／`end_time`自体には`default`値を設定しない方針にした）。
+- `validates :title, length: { minimum: 3 }, length: { maximum: 30 }, presence: true`のように、同一メソッド呼び出し内で`length:`キーを2回指定してしまい、Rubyのハッシュの仕様上、後に書いた`maximum`側で上書きされ`minimum`の指定が無効化されていた → `length: { within: 3..30 }`に統合して解消。
+- `bin/rubocop -A`実行時、`schedule.rb`のクラス本体先頭に余分な空行があり`Layout/EmptyLinesAroundClassBody`で指摘・自動修正された。
+
+#### テスト追加（Issue #33）
+
+- `spec/factories/schedules.rb`を新規作成（`title`／`start_time`／`end_time`／`location`／`description`にダミー値を設定し、`create(:schedule)`で有効なレコードがすぐ作れるようにした）。
+- Issue #33自体は画面を追加しないIssueのため、リポジトリのMVPテスト方針（画面追加ごとにrequest spec 1本）には該当せず、今回はRailsコンソールでのバリデーション動作確認に留めた（request/model specはIssue #34以降で必要に応じて追加）。
+
+#### 確認結果（Issue #33）
+
+- Railsコンソールで`Schedule.new.valid?`が`false`（必須項目`title`／`start_time`が空のため）、`Schedule.new(title: "練習会", start_time: Time.current).valid?`が`true`（必須項目が埋まっているため）となることを確認。
+- `docker compose exec web bin/rubocop`: 47 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 17 examples, 0 failures, 3 pending（既存の無関係スタブ）
+
+#### 補足（Issue #33）
+
+- `schedules`テーブルには`user_id`等の外部キーを意図的に持たせていない（管理者であれば誰でも予定を作成できる想定のため）。
+- ER図・テーブル定義の詳細は`/memories/repo/schema.md`（リポジトリメモリ）にも記録済み。
+- ブランチ`feat/issue-33-schedules-migration`で作業。コミットは「feat: schedulesテーブルのマイグレーションを作成」「feat: Scheduleモデルとバリデーションを追加」「test: schedule用のFactoryBotを追加」の3分割で実施。
