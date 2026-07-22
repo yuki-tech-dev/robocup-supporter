@@ -38,6 +38,7 @@ RSpec.describe "UserSessions", type: :request do
       delete logout_path
       expect(response).to redirect_to(root_path)
       follow_redirect!
+      expect(response.body).to include("ログアウトしました")
       expect(response.body).to include("新規登録")
     end
   end
