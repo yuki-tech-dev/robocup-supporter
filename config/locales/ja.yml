@@ -6,6 +6,12 @@ ja:
         email: メールアドレス
         password: パスワード
         password_confirmation: パスワード確認
+      schedule:
+        title: タイトル
+        start_time: 開始日時
+        end_time: 終了日時
+        location: 開催場所
+        description: 補足・連絡事項
   helpers:
     submit:
       create: 登録
@@ -17,6 +23,12 @@ ja:
         email: メールアドレス
         password: パスワード
         password_confirmation: パスワード確認
+      schedule:
+        title: タイトル
+        start_time: 開始日時
+        end_time: 終了日時
+        location: 開催場所
+        description: 補足・連絡事項
   defaults:
     flash_message:
       require_login: ログインしてください
@@ -41,3 +53,9 @@ ja:
     create:
       success: ユーザー登録が完了しました
       failure: ユーザー登録に失敗しました
+  schedules:
+    new:
+      title: 予定の新規登録
+    create:
+      success: 予定を登録しました
+      failure: 予定の登録に失敗しました
