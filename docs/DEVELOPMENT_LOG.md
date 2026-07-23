@@ -729,3 +729,38 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - カレンダーの特定の日付をクリックした際に、その日付が事前入力された状態で登録フォームに遷移するUXを`#35`で検討する方針で合意（`new_schedule_path(date: ...)`のようなクエリパラメータを想定）。
 - `#35`・`#36`のIssue本文にも`date`/`time`という古いカラム名の記載が残っているため、それぞれのIssue着手時に本文修正が必要。
 - ブランチ`feat/issue-34-schedule-create`で作業。
+
+### 2026-07-23 実施内容（作業中）
+
+#### Issue #35: 月間カレンダーUI導入・直近予定一覧表示（途中経過）
+
+#### 実施手順（Issue #35）
+
+1. Issue本文をGitHub上で修正（表示場所を「ログイン後のトップページ（`TopController#index`）」に確定、ビュー例を`app/views/top/index.html.erb`に変更、ロール別編集可否は`#37`のスコープ外である旨を追記）
+2. 設計方針を決定: 別コントローラーは新設せず、`root "top#index"`のまま`logged_in?`で出し分ける方式を採用（未ログイン時は従来のsplash画面、ログイン時はカレンダー画面）
+3. `Gemfile`に`gem "simple_calendar", "~> 2.4"`を追加し、`docker compose run --rm web bundle install`でインストール
+4. `TopController#index`を修正し、ログイン時のみ`@schedules`（カレンダー描画用の全件）と`@upcoming_schedules`（`start_time`が今日以降・昇順・先頭5件）を取得するよう変更
+5. `app/views/top/index.html.erb`を「出し分けの入口」に変更し、中身を`_guest_home.html.erb`（旧index.html.erbの内容）と`_calendar_home.html.erb`（新規、`month_calendar`ヘルパー＋直近予定一覧）に分割
+6. ブラウザで動作確認
+
+#### 発生した事象と対応（Issue #35）
+
+- `docker compose exec web bundle install`を実行するとエラーになった。原因は、Gemfile.lockにgemが未反映の状態だと`web`コンテナ自体が`bundle exec`系コマンドの起動チェックで失敗し終了してしまうため、`exec`（起動中コンテナに対して実行）の対象コンテナが存在しない状態だったこと。`docker compose run --rm web bundle install`（一時コンテナを新規作成して1回だけ実行）に変更して解決。
+- カレンダーを表示すると、曜日ヘッダーが4つ（月〜金の一部）しか表示されず、日付マス目も1行分しか出ない事象が発生。原因は`calendar`ヘルパーと`month_calendar`ヘルパーの違い（`calendar`はデフォルトで4日分のみ表示する汎用クラス`SimpleCalendar::Calendar`を使い、月全体を表示するには`month_calendar`ヘルパー（`SimpleCalendar::MonthCalendar`）を使う必要がある）と判明し、`month_calendar`に変更して解消。
+- `month_calendar`に変更後、曜日・週の構造は正しくなったが、日付の数字（1、2、3…）が一切表示されない事象が発生。simple_calendarのgemは`<td>`という箱と、その日に該当する`events`データをブロックに渡してくれるだけで、日付の数字自体は自動描画しない仕様と判明。ブロック内に`<%= date.day %>`を明示的に追加して解消。
+- 予定を1件登録して確認したところ、「直近の予定」一覧には表示されるのに、カレンダー本体のマス目には表示されない事象が発生。Railsコンソールで調査した結果、テストデータの`end_time`が`start_time`より3日も前の日時になっていたことが原因と判明。simple_calendar内部の複数日イベント対応ロジック（`(event_start_date..event_end_date).each`というRange処理）は、開始日が終了日より後だと空のRangeになり`.each`が一度も実行されないため、そのイベントがどの日付にも一切登録されない（`has-events`クラスも付与されない）という仕組みだった。壊れたテストデータの修正で表示されることを確認。
+  - この調査を通じて、「`Schedule`モデルに`end_time`が`start_time`より前にならないようにするバリデーションが無い」というデータ品質上の課題を発見し、別Issue（データ品質改善）として切り出す方針で合意（Issueは草案提示済み、登録は次回）。
+- ブラウザのアドレスバーに`http://localhost:3000/?start_date=.../schedules/new`のようにクエリ文字列付きURLの末尾にパスを継ぎ足してアクセスしてしまい、ルーティングされない事象が発生。URLの「パス」と「クエリ文字列（`?`以降）」の構造を再確認し、正しいURLに修正して解決。
+
+#### 確認結果（Issue #35、途中経過）
+
+- ログイン後のトップページに月間カレンダー（前月・翌月切り替え含む）と、登録した予定のタイトル・時刻が正しい日付のマス目に表示されることを確認
+- 「直近の予定」セクションにも、今日以降の予定が日時・場所付きで表示されることを確認
+
+#### 残課題（次回、2026-07-24以降）
+
+- カレンダー表の見た目崩れ（コンテナ幅に対して表がはみ出し、曜日と日付列がズレて折り返される）のTailwindスタイリング調整
+- データ品質改善Issue（`end_time`が`start_time`より前にならないようにするバリデーション追加）をGitHub上に登録
+- `spec/requests/top_spec.rb`へのログイン時カレンダー表示テスト追加
+- `docker compose exec web bin/rubocop`・`bundle exec rspec`・`bin/brakeman`の最終確認、コミット整理、PR作成
+- ブランチ`feat/issue-35-calendar-ui`で作業中。
