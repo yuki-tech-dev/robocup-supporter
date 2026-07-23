@@ -1,9 +1,5 @@
-<%# ヒーロー：背景画像 + タイトル %>
-<main class="relative flex items-center justify-center"
-      style="min-height: calc(100vh - 128px); background-image: url('<%= asset_path('iwatamikan.jpg') %>'); background-size: auto 100%; background-position: center;">
-  <div class="absolute inset-0 bg-black opacity-50"></div>
-  <div class="relative z-10 text-center text-white px-6">
-    <h1 class="text-5xl font-bold mb-4 tracking-wide">RoboCup Supporter</h1>
-    <p class="text-xl">ロボットプログラミング教室の連絡・教材管理をシンプルに</p>
-  </div>
-</main>
+<% if logged_in? %>
+  <%= render "calendar_home" %>
+<% else %>
+  <%= render "guest_home" %>
+<% end %>
