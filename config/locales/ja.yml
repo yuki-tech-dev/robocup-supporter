@@ -12,6 +12,12 @@ ja:
         end_time: 終了日時
         location: 開催場所
         description: 補足・連絡事項
+    errors:
+      models:
+        schedule:
+          attributes:
+            end_time:
+              after_start_time: "は開始日時より後の日時にしてください"
   helpers:
     submit:
       create: 登録
