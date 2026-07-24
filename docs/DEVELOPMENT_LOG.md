@@ -800,3 +800,35 @@ rm db/migrate/20260718075118_sorcery_core.rb
 #### 補足（Issue #35）
 
 - 作業中に発見したデータ品質の課題（`end_time`が`start_time`より前でも保存できてしまう）は、Issue #80として登録済み。`#35`のスコープ外のため、`#35`完了後に別ブランチで着手する。
+
+### 2026-07-24 実施内容（続き）
+
+#### Issue #80: Scheduleのend_timeがstart_timeより前の日時にならないようバリデーションを追加（完了）
+
+#### 実施手順（Issue #80）
+
+1. ブランチ`fix/issue-80-schedule-end-time-validation`を作成
+2. `app/models/schedule.rb`にカスタムバリデーション`validate :end_time_after_start_time`を追加し、`end_time`が`start_time`より前の場合にエラーを追加する`private`メソッドを実装
+3. `config/locales/ja.yml`に`activerecord.errors.models.schedule.attributes.end_time.after_start_time`のメッセージを追加
+4. ブラウザの予定新規登録フォームで、`end_time`を`start_time`より前の日時にして送信し、「終了日時は開始日時より後の日時にしてください」というエラーが表示されることを確認
+5. `spec/models/schedule_spec.rb`を新規作成（正常系1件・`end_time`が`start_time`より前で無効になること1件・`end_time`が`nil`でも有効であること1件の計3件）
+6. 最終チェック実施（`bin/rubocop`・`bundle exec rspec`・`bin/brakeman`）
+
+#### 発生した事象と対応（Issue #80）
+
+- バリデーション追加後、既存の`spec/requests/top_spec.rb`（ログイン時のテスト、`#35`で追加）が失敗するようになった。原因は、テスト内で`FactoryBot.create(:schedule, start_time: 1.day.from_now)`と`start_time`だけを上書きしており、factoryのデフォルト`end_time`（2026-07-01固定）が上書き後の`start_time`より前のままになっていたため。今回追加したバリデーションが正しく機能した結果、意図せず既存データが不正な状態だったことが逆に明らかになった形。`end_time: 1.day.from_now + 2.hours`も併せて上書きするよう修正して解消。
+
+#### テスト追加（Issue #80）
+
+- `spec/models/schedule_spec.rb`を新規作成
+  - `FactoryBot.build(:schedule)`（デフォルト属性）が有効であること
+  - `end_time`が`start_time`より前の場合、無効になり、`errors[:end_time]`に日本語メッセージが含まれること
+  - `end_time`が`nil`の場合は有効であること（未入力時も保存できるという完了条件を担保）
+
+#### 確認結果（Issue #80、完了）
+
+- ブラウザで実際に`end_time`を`start_time`より前にして送信し、バリデーションエラーが表示されることを確認
+- `docker compose exec web bundle exec rspec`: 26 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bundle exec rubocop`: 51 files inspected, no offenses detected
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CI側で除外済みのため実質0件）
+
