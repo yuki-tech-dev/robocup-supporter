@@ -25,7 +25,9 @@ RSpec.describe "Tops", type: :request do
 
   describe "GET /index（ログイン時）" do
     let(:user) { FactoryBot.create(:user, password: "password", password_confirmation: "password") }
-    let!(:schedule) { FactoryBot.create(:schedule, title: "○○大会", start_time: 1.day.from_now) }
+    let!(:schedule) do
+      FactoryBot.create(:schedule, title: "○○大会", start_time: 1.day.from_now, end_time: 1.day.from_now + 2.hours)
+    end
 
     before do
       post login_path, params: { email: user.email, password: "password" }
