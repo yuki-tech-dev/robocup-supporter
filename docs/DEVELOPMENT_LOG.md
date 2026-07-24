@@ -764,3 +764,39 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - `spec/requests/top_spec.rb`へのログイン時カレンダー表示テスト追加
 - `docker compose exec web bin/rubocop`・`bundle exec rspec`・`bin/brakeman`の最終確認、コミット整理、PR作成
 - ブランチ`feat/issue-35-calendar-ui`で作業中。
+
+### 2026-07-24 実施内容
+
+#### Issue #35: 月間カレンダーUI導入・直近予定一覧表示（残課題対応・完了）
+
+#### 実施手順（Issue #35 続き）
+
+1. `rails g simple_calendar:views`を実行し、gemのデフォルトビュー（`app/views/simple_calendar/_month_calendar.html.erb`等）をアプリ側にコピーして編集可能な状態にした
+2. `_month_calendar.html.erb`の日付セル（`<td>`）に`border border-gray-200`を追加し、セルの境界線を明示
+3. ブラウザで画面幅を変えて（デスクトップ幅・タブレット幅・スマートフォン幅の3パターン）レイアウト崩れが再現しないことを確認
+4. テストデータを3件（同日に複数予定・長いタイトル）登録し、`h-24`のセル内に収まること、長いタイトルが`truncate`で省略表示されることを確認
+5. `spec/requests/top_spec.rb`に「ログイン時」の`describe`ブロックを追加（カレンダー見出し表示・直近の予定にタイトルが表示されることの2件）
+6. 最終チェック実施（`bin/rubocop`・`bundle exec rspec`・`bin/brakeman`）
+
+#### 発生した事象と対応（Issue #35 続き）
+
+- `border border-gray-200`を追加する前は、境界線が無いことで列の位置関係が視覚的に分かりにくく「崩れて見える」状態だった。境界線を追加したことで、実際には`table-fixed`により列は均等に幅計算されていたことが確認できた。
+- テストデータ登録時、長いタイトルの予定を1件追加したところ、「直近の予定」には表示されるのにカレンダー本体からは表示されない事象が**再現**した。原因は前日発見した`end_time`が`start_time`より前になっている同一のバグ（今回は`end_time`が2日前の日時になっていた）。実データで`#80`の必要性を改めて裏付ける結果となった。Railsコンソールで`end_time`を`nil`に更新し解消・表示確認。
+
+#### テスト追加（Issue #35 続き）
+
+- `spec/requests/top_spec.rb`に`describe "GET /index（ログイン時）"`を追加
+  - ログイン後、カレンダーの見出し（「教室カレンダー」）が表示されること
+  - 「直近の予定」見出しと、`FactoryBot`で用意したスケジュールのタイトルが表示されること
+  - `let!`を使い、リクエスト実行前にスケジュールがDBに存在する状態を保証。factoryのデフォルト`start_time`（2026-07-01）は現在時刻より過去のため、「直近の予定」の抽出条件（`start_time >= Time.current`）に該当するよう`1.day.from_now`で上書き
+
+#### 確認結果（Issue #35、完了）
+
+- `docker compose exec web bundle exec rspec spec/requests/top_spec.rb`: 6 examples, 0 failures
+- `docker compose exec web bundle exec rubocop`: 50 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 23 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CI側で除外設定済みのため実質0件）
+
+#### 補足（Issue #35）
+
+- 作業中に発見したデータ品質の課題（`end_time`が`start_time`より前でも保存できてしまう）は、Issue #80として登録済み。`#35`のスコープ外のため、`#35`完了後に別ブランチで着手する。
