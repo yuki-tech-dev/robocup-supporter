@@ -1,0 +1,33 @@
+<% content_for(:title, t('.title')) %>
+<div class="max-w-md mx-auto mt-10 px-6 mb-10">
+  <h1 class="text-2xl font-bold mb-6 text-center"><%= t('.title') %></h1>
+
+  <div class="mb-4">
+    <%= label_tag nil, Schedule.human_attribute_name(:title), class: "block text-lg font-medium text-gray-700 mb-1" %>
+    <p class="w-full border border-gray-300 rounded px-4 py-3 text-lg bg-gray-50"><%= @schedule.title %></p>
+  </div>
+
+  <div class="mb-4">
+    <%= label_tag nil, Schedule.human_attribute_name(:start_time), class: "block text-lg font-medium text-gray-700 mb-1" %>
+    <p class="w-full border border-gray-300 rounded px-4 py-3 text-lg bg-gray-50"><%= l(@schedule.start_time, format: :long) if @schedule.start_time %></p>
+  </div>
+
+  <div class="mb-4">
+    <%= label_tag nil, Schedule.human_attribute_name(:end_time), class: "block text-lg font-medium text-gray-700 mb-1" %>
+    <p class="w-full border border-gray-300 rounded px-4 py-3 text-lg bg-gray-50"><%= l(@schedule.end_time, format: :long) if @schedule.end_time %></p>
+  </div>
+
+  <div class="mb-4">
+    <%= label_tag nil, Schedule.human_attribute_name(:location), class: "block text-lg font-medium text-gray-700 mb-1" %>
+    <p class="w-full border border-gray-300 rounded px-4 py-3 text-lg bg-gray-50"><%= @schedule.location %></p>
+  </div>
+
+  <div class="mb-6">
+    <%= label_tag nil, Schedule.human_attribute_name(:description), class: "block text-lg font-medium text-gray-700 mb-1" %>
+    <div class="w-full border border-gray-300 rounded px-4 py-3 text-lg bg-gray-50 whitespace-pre-wrap"><%= @schedule.description %></div>
+  </div>
+
+  <%= link_to root_path, class: "mt-6 inline-flex items-center justify-center gap-2 w-full bg-gray-800 text-white text-xl font-bold py-4 rounded-lg shadow-md hover:bg-gray-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" do %>
+  ← <%= t('.return') %>
+  <% end %>
+</div>

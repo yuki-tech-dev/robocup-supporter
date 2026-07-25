@@ -65,3 +65,6 @@ ja:
     create:
       success: 予定を登録しました
       failure: 予定の登録に失敗しました
+    show:
+      title: 予定の詳細
+      return: 戻る
