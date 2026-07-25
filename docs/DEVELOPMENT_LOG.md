@@ -871,3 +871,65 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - このIssueから、読み取り専用のGitHub CLIコマンド（`gh issue view`等）はユーザー承認を待たずAIが判断して実行してよい運用に変更（`gh issue edit`のような書き込み系コマンドは引き続き事前提示・承認が必須）。
 - `.github/copilot-instructions.md`のルール5（検索・照会コマンドの事前承認）を、読み取り専用コマンドの扱いに関して見直す方針を合意。対応するIssue・ブランチは次回以降に着手予定。
 
+### 2026-07-25 実施内容（続き）
+
+#### Issue #86: copilot-instructions.mdのコマンド実行に関する承認ルールの見直し（完了）
+
+#### 実施手順（Issue #86）
+
+1. ブランチ`docs/issue-86-update-rule5`を作成
+2. `.github/copilot-instructions.md`のルール4（Git操作）を改訂。読み取り専用のGitコマンド（`git status`/`git diff`/`git log`）をユーザー実行必須の対象から外し、ルール5に委ねる形に変更
+3. ルール5を「読み取り専用コマンドはAI判断で実行可、書き込み・環境変更系は事前承認必須」に全面改訂。読み取り専用コマンド例（`ls`/`pwd`/`cat`/`git status`/`git diff`/`git log`/`gh issue view`/`gh pr view`/`gh project item-list`）と、書き込み・環境変更系コマンド例（`git commit`/`push`/`gh issue edit`/`gh issue create`/`gh pr create`/`gh project item-create`/`item-edit`）を明記
+4. ルール12（既定方針）に2点追記
+   - `gh auth login`のような認証情報のやり取りが発生するコマンドはAIが代行実行しないこと
+   - 作業再開時は`docs/DEVELOPMENT_LOG.md`を進捗記録の正（source of truth）として参照すること
+5. PR作成・マージ
+
+#### 確認結果（Issue #86、完了）
+
+- `.github/copilot-instructions.md`の差分を目視確認。既存のルール番号・章立てに影響がないことを確認（renumberingなし）
+- ドキュメントのみの変更のため、アプリケーションの動作確認は不要
+
+### 2026-07-25 実施内容（続き）
+
+#### Issue #37: 予定の編集・更新機能の作成（U：Update）（完了）
+
+#### 実施手順（Issue #37）
+
+1. Issue本文をGitHub CLI（`gh issue edit`）経由で修正（「時間（`time`）」という誤った表記を「開始日時（`start_time`）」「終了日時（`end_time`）」に統一、`#34`・`#36`と同様の食い違い）
+2. `config/routes.rb`の`resources :schedules`に`edit`/`update`を追加（`only: %i[new create show edit update]`）
+3. `SchedulesController`に`before_action :set_schedule, only: %i[show edit update]`を追加し、`show`アクションの中身を空に整理。`edit`アクション（空、ビュー表示のみ）と`update`アクション（`@schedule.update(schedule_params)`、成功時は`root_path`へリダイレクト＋成功フラッシュ、失敗時は`render :edit, status: :unprocessable_entity`）を実装
+4. `app/views/schedules/_form.html.erb`を新規作成し、`new.html.erb`の`form_with`部分を切り出して`new`/`edit`で共通利用できるようにした
+5. `app/views/schedules/edit.html.erb`を新規作成（`_form`パーシャルを利用）
+6. `app/views/schedules/show.html.erb`に「編集」ボタン（`edit_schedule_path(@schedule)`へのリンク）を追加
+7. UI調整: タイトルと送信ボタン・編集ボタンを同じ行（`flex justify-between`）に配置し、両ボタンの配色を`bg-blue-600 hover:bg-blue-700`に統一
+8. `config/locales/ja.yml`に`schedules.edit.title`・`schedules.form.return`・`schedules.update.success`/`failure`等を追加
+9. `spec/requests/schedules_spec.rb`に`GET /schedules/:id/edit`・`PATCH /schedules/:id`（正常系・異常系）のテストを追加
+10. 最終チェック実施（`bin/rubocop`・`bundle exec rspec`・`bin/brakeman`）
+
+#### 発生した事象と対応（Issue #37）
+
+- `before_action :set_schedule`を、対象を`SchedulesController`ではなく`ApplicationController`に置いてしまい、アプリ全コントローラー（`TopController`・`UserSessionsController`等）に影響が及ぶ状態が複数回発生。最終的に`SchedulesController`内に`before_action :set_schedule, only: %i[show edit update]`として定義し解消。
+- `skip_before_action :set_schedule, only: %i[new create]`のみが残り、肝心の`before_action :set_schedule`宣言や`set_schedule`メソッド本体が欠けている状態が一時発生（存在しないコールバックのスキップ）。両方をセットで揃えて解消。
+- `update`アクションで`@schedule.update`に引数（`schedule_params`）を渡し忘れており、フォーム入力値が反映されない状態だった。修正して解消。
+- `update`失敗時に`render :new`としていた（本来は`render :edit`）。Issue本文の完了条件に合わせて修正。
+- `_form.html.erb`共通化に伴い、`t('.return')`のようなlazy lookup（i18n）が、呼び出し元のビュー（`new`/`edit`）ではなく**パーシャル自身のパス**（`schedules/_form` → `schedules.form`）を基準にキーを探すため、`schedules.new.return`/`schedules.edit.return`に書いても反映されない事象が発生。`schedules.form.return`に追加して解消。
+- 「戻る」リンクを`schedule_path`（引数なし）としたため、`@schedule`が未保存の`new`画面で`:id`を解決できずエラーになりうる状態だった。`schedule.persisted? ? schedule_path(schedule) : root_path`に修正し、新規作成中は`root_path`、編集中は詳細画面に戻るよう解消。
+- 詳細画面に「編集」ボタンへの動線が実装当初は存在せず、URL直接入力でしかたどり着けない状態だった。`show.html.erb`にボタンを追加して解消。
+
+#### テスト追加（Issue #37）
+
+- `spec/requests/schedules_spec.rb`に以下を追加
+  - `GET /schedules/:id/edit`: 200が返ること・「予定の更新」というタイトルが表示されること
+  - `PATCH /schedules/:id`: 有効な情報の場合に予定が更新され`root_path`へリダイレクト・成功フラッシュが表示されること／不正な情報の場合は更新されずエラーメッセージが表示されること
+
+#### 確認結果（Issue #37、完了）
+
+- `docker compose exec web bin/rubocop`: 51 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 32 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CI側で除外済みのため実質0件）
+
+#### 補足（Issue #37）
+
+- 次の着手Issue: #38（予定の削除機能D）
+
