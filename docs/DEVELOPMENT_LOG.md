@@ -832,3 +832,42 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - `docker compose exec web bundle exec rubocop`: 51 files inspected, no offenses detected
 - `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CI側で除外済みのため実質0件）
 
+### 2026-07-25 実施内容
+
+#### Issue #36: 予定タップ時の詳細表示機能の作成（R：Read）（完了）
+
+#### 実施手順（Issue #36）
+
+1. ブランチ`feat/issue-36-schedule-show`を作成
+2. Issue本文をGitHub CLI（`gh issue edit`）経由で修正（「時間（`time`）」という誤った表記を「開始日時（`start_time`）」「終了日時（`end_time`）」に、「開催日、開始時間」を「開始日時」に統一）
+3. `config/routes.rb`の`resources :schedules`に`show`を追加（`only: %i[new create show]`）
+4. `SchedulesController#show`を追加（`Schedule.find(params[:id])`、レコードが存在しない場合はRailsの標準機能で自動的に404となるため個別のエラーハンドリングは実装しない）
+5. `app/views/schedules/show.html.erb`を新規作成。ER図の全項目（タイトル・開始日時・終了日時・場所・詳細説明）を表示専用のレイアウトで実装し、`config/locales/ja.yml`に`schedules.show`（`title`/`return`）を追加
+6. `app/views/top/_calendar_home.html.erb`のカレンダーセル・直近予定一覧の両方で、予定タイトルを`schedule_path(schedule)`へのリンクに変更し、詳細画面への動線を接続
+7. `spec/requests/schedules_spec.rb`に`GET /schedules/:id`のテストを追加（200が返ること・タイトルが表示されること）
+8. 最終チェック実施（`bin/rubocop`・`bundle exec rspec`・`bin/brakeman`）
+
+#### 発生した事象と対応（Issue #36）
+
+- ビュー作成の1回目の実装で、`new.html.erb`をベースにしたため`form_with`・入力ヘルパー（`f.text_field`等）・`f.submit`・`shared/error_messages`パーシャルがそのまま残ってしまい、「表示専用画面」のはずが「編集可能な入力フォーム」になっていた。表示専用のページには入力ヘルパーではなく`label_tag` + `<p>`タグでの出力で十分という点を確認し、修正。
+- カレンダー・直近予定一覧のリンク実装で、`schedule_path(@schedule)`のように誤って`@schedule`（インスタンス変数、`SchedulesController#show`でのみ設定される・この画面では常に`nil`）を参照してしまい、ループのブロック変数`schedule`との混同が発生。`schedule_path(schedule)`に修正して解消。
+- `ja.yml`の`schedules.show`セクションで、ビュー側の`t('.return')`とキー名`delete:`が一致しておらず`translation missing`になる状態だった。キー名を`return:`に統一して解消。
+- 詳細画面下部の「戻る」ボタンがフッターに直接接触して見える事象が発生。原因はコンテナ`div`に上余白（`mt-10`）はあるが下余白が無かったため。`mb-10`を追加して解消。
+
+#### テスト追加（Issue #36）
+
+- `spec/requests/schedules_spec.rb`に`describe "GET /schedules/:id"`を追加
+  - `let!(:schedule)`でレコードを事前作成し、`GET /schedules/:id`が200を返すこと
+  - 予定のタイトルが表示されること
+
+#### 確認結果（Issue #36、完了）
+
+- `docker compose exec web bundle exec rspec`: 28 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bin/rubocop`: 51 files inspected, no offenses detected
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CI側で除外済みのため実質0件）
+
+#### 補足（Issue #36）
+
+- このIssueから、読み取り専用のGitHub CLIコマンド（`gh issue view`等）はユーザー承認を待たずAIが判断して実行してよい運用に変更（`gh issue edit`のような書き込み系コマンドは引き続き事前提示・承認が必須）。
+- `.github/copilot-instructions.md`のルール5（検索・照会コマンドの事前承認）を、読み取り専用コマンドの扱いに関して見直す方針を合意。対応するIssue・ブランチは次回以降に着手予定。
+

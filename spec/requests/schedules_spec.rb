@@ -19,6 +19,20 @@ RSpec.describe "Schedules", type: :request do
     end
   end
 
+  describe "GET /schedules/:id" do
+    let!(:schedule) { FactoryBot.create(:schedule) }
+
+    it "returns http success" do
+      get schedule_path(schedule)
+      expect(response).to have_http_status(:success)
+    end
+
+    it "予定のタイトルが表示されること" do
+      get schedule_path(schedule)
+      expect(response.body).to include(schedule.title)
+    end
+  end
+
   describe "POST /schedules" do
     let(:valid_params) do
       {

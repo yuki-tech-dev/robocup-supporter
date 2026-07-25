@@ -7,7 +7,7 @@
       <% schedules.each do |schedule| %>
         <div class="bg-blue-100 text-blue-900 rounded px-1 py-0.5 mb-1 truncate">
           <span class="font-semibold"><%= schedule.start_time.strftime("%H:%M") %></span>
-          <%= schedule.title %>
+          <%= link_to schedule.title, schedule_path(schedule), id: "button-show-#{schedule.id}" %>
         </div>
       <% end %>
     <% end %>
@@ -19,7 +19,7 @@
       <ul class="space-y-3">
         <% @upcoming_schedules.each do |schedule| %>
           <li class="bg-white rounded-lg shadow p-4">
-            <p class="text-lg font-semibold"><%= schedule.title %></p>
+            <p class="text-lg font-semibold"><%= link_to schedule.title, schedule_path(schedule), id: "button-show-#{schedule.id}" %></p>
             <p class="text-gray-600">
               <%= schedule.start_time.strftime("%Y/%m/%d %H:%M") %>
               <% if schedule.location.present? %>
