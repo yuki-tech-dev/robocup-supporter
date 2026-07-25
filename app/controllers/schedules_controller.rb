@@ -1,4 +1,8 @@
 class SchedulesController < ApplicationController
+  # before_action :set_schedule
+  # skip_before_action :set_schedule, only: %i[new create]
+  before_action :set_schedule, only: %i[show edit update]
+
   def new
     @schedule = Schedule.new
   end
@@ -14,11 +18,24 @@ class SchedulesController < ApplicationController
     end
   end
 
-  def show
-    @schedule = Schedule.find(params[:id])
+  def update
+    if @schedule.update(schedule_params)
+      redirect_to root_path, success: t("schedules.update.success")
+    else
+      flash.now[:danger] = t("schedules.update.failure")
+      render :edit, status: :unprocessable_entity
+    end
   end
 
+  def show; end
+
+  def edit; end
+
   private
+
+  def set_schedule
+    @schedule = Schedule.find(params[:id])
+  end
 
   def schedule_params
     params.require(:schedule).permit(:title, :start_time, :end_time, :location, :description)
