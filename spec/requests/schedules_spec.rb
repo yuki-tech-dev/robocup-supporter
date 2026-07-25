@@ -107,4 +107,17 @@ RSpec.describe "Schedules", type: :request do
       expect(response.body).to include("予定の更新に失敗しました")
     end
   end
+
+  describe "DELETE /schedules/:id" do
+    let!(:schedule) { FactoryBot.create(:schedule) }
+
+    it "予定が削除されトップページにリダイレクトされ、削除成功メッセージが表示されること" do
+      expect do
+        delete schedule_path(schedule)
+      end.to change(Schedule, :count).by(-1)
+      expect(response).to redirect_to(root_path)
+      follow_redirect!
+      expect(response.body).to include("予定を削除しました")
+    end
+  end
 end

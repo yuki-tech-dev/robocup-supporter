@@ -1,7 +1,7 @@
 class SchedulesController < ApplicationController
   # before_action :set_schedule
   # skip_before_action :set_schedule, only: %i[new create]
-  before_action :set_schedule, only: %i[show edit update]
+  before_action :set_schedule, only: %i[show edit update destroy]
 
   def new
     @schedule = Schedule.new
@@ -30,6 +30,11 @@ class SchedulesController < ApplicationController
   def show; end
 
   def edit; end
+
+  def destroy
+    @schedule.destroy!
+    redirect_to root_path, danger: t("schedules.destroy.success")
+  end
 
   private
 

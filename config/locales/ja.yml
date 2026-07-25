@@ -76,3 +76,6 @@ ja:
       title: 予定の更新
     form:
       return: 戻る
+    destroy:
+      success: 予定を削除しました
+    delete_confirm: 本当にこの予定を削除しますか？

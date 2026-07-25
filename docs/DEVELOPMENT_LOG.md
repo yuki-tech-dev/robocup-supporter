@@ -933,3 +933,43 @@ rm db/migrate/20260718075118_sorcery_core.rb
 
 - 次の着手Issue: #38（予定の削除機能D）
 
+### 2026-07-25 実施内容（続き）
+
+#### Issue #38: 予定の削除機能の作成（D：Delete）（完了）
+
+#### 実施手順（Issue #38）
+
+1. ブランチ`feat/issue-38-schedule-delete`を作成
+2. `config/routes.rb`の`resources :schedules`に`destroy`を追加（`only: %i[new create show edit update destroy]`）
+3. `SchedulesController`の`before_action :set_schedule`の対象に`destroy`を追加（`only: %i[show edit update destroy]`）、`destroy`アクションを実装（`@schedule.destroy!`後、`root_path`へリダイレクトし赤系のフラッシュメッセージを表示）
+4. `app/views/schedules/show.html.erb`に削除ボタンを追加（インラインSVGのゴミ箱アイコン、`link_to schedule_path(@schedule), data: { turbo_method: :delete, turbo_confirm: t('schedules.delete_confirm') }`）
+5. `config/locales/ja.yml`に`schedules.destroy.success`・`schedules.delete_confirm`を追加
+6. `spec/requests/schedules_spec.rb`に`DELETE /schedules/:id`のテストを追加
+7. 最終チェック実施（`bin/rubocop`・`bundle exec rspec`・`bin/brakeman`）
+
+#### 発生した事象と対応（Issue #38）
+
+- `destroy`アクション内で`before_action`によりセット済みの`@schedule`に対し、さらに`set_schedule`を明示的に呼び出しており冗長だった。`before_action`の対象に`destroy`を含めていれば個別呼び出しは不要なため削除。
+- `redirect_to root_path`と`flash.now`を組み合わせていたため、リダイレクト先の画面にフラッシュメッセージが表示されない状態だった。`flash.now`は同一リクエスト内で`render`する場合に限られるため、`redirect_to`と併用する場合は通常の`flash`（`redirect_to root_path, danger: t(...)`）を使うよう修正。
+- 削除成功時のフラッシュタイプを当初`success:`（緑系）としていたが、Issue本文の「赤系または警告系の色」という指定に合わせ`danger:`に修正。
+- 削除ボタンのアイコンに初回`bi bi-trash-fill`（Bootstrap Icons）のクラス名を使用したが、本アプリはTailwind CSS構成でBootstrap Iconsが読み込まれておらず表示されない状態だった → インラインSVGのゴミ箱アイコンに変更して解消。
+- 確認ダイアログの文言用i18nキーを、ビュー側`t('defaults.delete_confirm')`とロケールファイル側`schedules.delete_confirm`とでスコープが一致していなかった一時期があったが、ビュー側を`schedules.delete_confirm`に統一して解消。
+
+#### テスト追加（Issue #38）
+
+- `spec/requests/schedules_spec.rb`に`describe "DELETE /schedules/:id"`を追加
+  - 予定が削除されレコード数が1件減ること・`root_path`へリダイレクトされること・削除成功メッセージが表示されることを1件のテストで検証（Rule 13の最小テスト方針に沿い、対応する失敗系の入力パターンが無いため成功系のみ）
+
+#### 確認結果（Issue #38、完了）
+
+- ブラウザで削除ボタン押下→確認ダイアログ表示→「OK」で削除・トップページへリダイレクト・赤系フラッシュメッセージ表示を確認
+- `docker compose exec web bin/rubocop`: 51 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 33 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CI側で除外済みのため実質0件）
+
+#### 補足（Issue #38）
+
+- 削除ボタンのアイコンサイズ・色をユーザー好みに調整（`size-5`→`size-7`、`text-red-500`→`text-gray-500`）
+- 編集ボタンをペンシルアイコンに変更する件は、統一感の観点からスコープを分離し、GitHub Projectsにドラフトissueとして登録済み（別Issueで対応予定）
+- 次の着手Issue: #39（materialsテーブルのマイグレーション作成）
+
