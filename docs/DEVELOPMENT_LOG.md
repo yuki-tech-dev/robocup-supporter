@@ -973,3 +973,42 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 編集ボタンをペンシルアイコンに変更する件は、統一感の観点からスコープを分離し、GitHub Projectsにドラフトissueとして登録済み（別Issueで対応予定）
 - 次の着手Issue: #39（materialsテーブルのマイグレーション作成）
 
+### 2026-07-25 実施内容（続き）
+
+#### Issue #39: materialsテーブルのマイグレーション作成（完了）
+
+#### 実施手順（Issue #39）
+
+1. ブランチ`feat/issue-39-materials-migration`を作成
+2. ER図（`title`/`description`の2カラムのみ）を再確認した上で、`docker compose exec web bin/rails g migration CreateMaterials title:string description:text`でマイグレーションファイルを生成
+3. `db/migrate/xxxxx_create_materials.rb`の`title`に`null: false`を追記（ER図・Issue本文に忠実な内容に修正、一時的に追加した`add_index unique: true`はスコープ外と判断し削除）
+4. `docker compose exec web bin/rails db:migrate`を実行し、`db/schema.rb`に反映されたことを確認
+5. `app/models/material.rb`を新規作成。`title`に`presence: true`＋`length: { within: 2..30, allow_blank: true }`、`description`に`length: { maximum: 255 }`を追加（Issue本文はtitleのpresenceのみ要求だが、Scheduleモデルの設計に合わせて意図的にスコープを拡張）
+6. Railsコンソールで`Material.new`のバリデーション動作を確認（有効な属性で`valid?`が`true`、`title`未入力/短すぎる場合に`false`、エラーメッセージが重複しないこと）
+7. `spec/factories/materials.rb`・`spec/models/material_spec.rb`を新規作成
+8. 最終チェック実施（`bin/rubocop`・`bundle exec rspec`・`bin/brakeman`）
+
+#### 発生した事象と対応（Issue #39）
+
+- マイグレーションファイル生成後、`title`に`add_index :materials, :title, unique: true`を独自追加していたが、ER図・Issue本文に無い制約であり、教材資料を複数バージョン（同名タイトルの更新版など）登録できなくなる設計上の問題があったため削除。
+- `title`のバリデーションを`presence: true`と`length: { within: 2..30 }`を組み合わせる際、`allow_blank: false`（デフォルト）のままだと、空欄時に「presenceのエラー」と「lengthのエラー」が重複表示される事象が発生しかけた（Issue #34で一度解決済みの問題の再発パターン）。`allow_blank: true`を`length`のオプションとして指定し解消。`allow_blank: true`は`length`バリデーションのみをスキップするローカルなオプションであり、`presence`バリデーション自体には影響しないため、両者は打ち消し合わない点を確認。
+
+#### テスト追加（Issue #39）
+
+- `spec/factories/materials.rb`を新規作成
+- `spec/models/material_spec.rb`を新規作成
+  - `FactoryBot.build(:material)`（デフォルト属性）が有効であること
+  - `title`が未入力の場合、presenceのエラーのみで無効になること（lengthのエラーと重複しないことを確認）
+  - `title`が2文字未満の場合、lengthのエラーで無効になること
+
+#### 確認結果（Issue #39、完了）
+
+- Railsコンソールで`Material.new`のバリデーション動作を確認（`errors[:title]`の内容が想定通り、重複なし）
+- `docker compose exec web bin/rubocop -A`: 配列リテラルの空白ルールを自動修正 → 55 files inspected, no offenses detected
+- `docker compose exec web bundle exec rspec`: 36 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- `docker compose exec web bin/brakeman`: Security Warnings 1件（`EOLRails`のみ、CI側で除外済みのため実質0件）
+
+#### 補足（Issue #39）
+
+- 次の着手Issue: #40（Active Storageの有効化と初期設定）
+
