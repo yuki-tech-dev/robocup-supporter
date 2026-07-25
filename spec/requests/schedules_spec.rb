@@ -66,4 +66,45 @@ RSpec.describe "Schedules", type: :request do
       expect(response.body).to include("予定の登録に失敗しました")
     end
   end
+
+  describe "GET /schedules/:id/edit" do
+    let!(:schedule) { FactoryBot.create(:schedule) }
+
+    it "returns http success" do
+      get edit_schedule_path(schedule)
+      expect(response).to have_http_status(:success)
+    end
+
+    it "タイトルが表示されること" do
+      get edit_schedule_path(schedule)
+      expect(response.body).to include("予定の更新")
+    end
+  end
+
+  describe "PATCH /schedules/:id" do
+    let!(:schedule) { FactoryBot.create(:schedule) }
+
+    let(:valid_params) do
+      { schedule: { title: "磐田大会（変更後）" } }
+    end
+
+    let(:invalid_params) do
+      { schedule: { title: "", start_time: "" } }
+    end
+
+    it "有効な情報の場合、予定が更新されトップページにリダイレクトされること" do
+      patch schedule_path(schedule), params: valid_params
+      expect(response).to redirect_to(root_path)
+      follow_redirect!
+      expect(response.body).to include("予定を更新しました")
+      expect(schedule.reload.title).to eq("磐田大会（変更後）")
+    end
+
+    it "不正な情報の場合、予定が更新されずエラーメッセージが表示されること" do
+      expect do
+        patch schedule_path(schedule), params: invalid_params
+      end.not_to change { schedule.reload.title }
+      expect(response.body).to include("予定の更新に失敗しました")
+    end
+  end
 end
