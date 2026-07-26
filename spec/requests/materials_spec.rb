@@ -28,11 +28,11 @@ RSpec.describe "Materials", type: :request do
       { material: { title: "" } }
     end
 
-    it "有効な情報の場合、資料が作成されトップページにリダイレクトされること" do
+    it "有効な情報の場合、資料が作成され一覧ページにリダイレクトされること" do
       expect do
         post materials_path, params: valid_params
       end.to change(Material, :count).by(1)
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(materials_path)
       follow_redirect!
       expect(response.body).to include("資料を登録しました")
     end
@@ -42,6 +42,19 @@ RSpec.describe "Materials", type: :request do
         post materials_path, params: invalid_params
       end.not_to change(Material, :count)
       expect(response.body).to include("資料の登録に失敗しました")
+    end
+  end
+
+  describe "GET /materials" do
+    it "returns http success" do
+      get materials_path
+      expect(response).to have_http_status(:success)
+    end
+
+    it "登録済みの資料タイトルが表示されること" do
+      material = FactoryBot.create(:material)
+      get materials_path
+      expect(response.body).to include(material.title)
     end
   end
 end
