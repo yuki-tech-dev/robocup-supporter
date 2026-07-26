@@ -17,4 +17,19 @@ RSpec.describe Material, type: :model do
     expect(material).to be_invalid
     expect(material.errors[:title]).to include("は2文字以上で入力してください")
   end
+
+  it "対応していないファイル形式の場合、無効になること" do
+    material = FactoryBot.build(:material)
+    material.file.attach(io: StringIO.new("dummy"), filename: "sample.txt", content_type: "text/plain")
+    expect(material).to be_invalid
+    expect(material.errors[:file]).to include("は対応していないファイル形式です（PDF, JPEG, PNGのみ可）")
+  end
+
+  it "ファイルサイズが10MBを超える場合、無効になること" do
+    material = FactoryBot.build(:material)
+    material.file.attach(io: StringIO.new("dummy"), filename: "sample.pdf", content_type: "application/pdf")
+    allow(material.file.blob).to receive(:byte_size).and_return(11.megabytes)
+    expect(material).to be_invalid
+    expect(material.errors[:file]).to include("のサイズが大きすぎます（10MB以下にしてください）")
+  end
 end
