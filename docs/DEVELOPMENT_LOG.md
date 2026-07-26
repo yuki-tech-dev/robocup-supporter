@@ -1037,3 +1037,17 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 順序決定: 次は#42（教材一覧・ダウンロード機能R）→#43（教材ファイルの削除機能D）→#91（AWS S3本番導入）の順に着手。理由は教材のC/R/Dを一区切り終えてから本番ストレージ切替に進むことで、S3切替後の動作確認を一度にまとめて行えるため
 - 次の着手Issue: #42（教材一覧・ダウンロード機能R）
 
+#### Issue #42: 教材一覧・ダウンロード機能（完了）
+
+- `config/routes.rb`の`resources :materials`に`index`を追加
+- `MaterialsController#index`を実装（`Material.with_attached_file.order(created_at: :desc)`で新しい順に取得。`with_attached_file`でActive Storageの添付ファイル情報を事前一括読み込みし、一覧表示時のN+1問題を回避）
+- `app/views/materials/index.html.erb`を新規作成（カード形式で「タイトル」「説明文」を大きめの文字で表示、`material.file.attached?`で添付有無を判定し、添付がある場合のみ`rails_blob_path(material.file, disposition: "attachment")`でダウンロードリンクを表示）
+- `MaterialsController#create`の登録成功時リダイレクト先を、Issue #41で残していたTODO通り`root_path`から`materials_path`（一覧画面）に変更
+- `app/views/materials/new.html.erb`の「戻る」リンクも一覧画面実装に伴い`materials_path`に変更
+- `app/views/shared/_header.html.erb`にログイン時の「教材一覧」リンクを追加（Figma画面遷移図の「教室カレンダー / 教材一覧 / ログアウト」構成に合わせる）。さらにユーザーからの指摘で「教室カレンダー」（`root_path`へのリンク）も同時に追加し、ヘッダー構成をFigma通り「教室カレンダー / 教材一覧 / ユーザー名 / ログアウト」に統一
+- `app/views/materials/index.html.erb`の「戻る」ボタンを、当初はテキストリンク（`text-blue-600 hover:underline`）で実装していたが、ユーザーからの指摘で`schedules/show.html.erb`・`_form.html.erb`と同じ`bg-gray-800`のフル幅ボタンスタイルに統一
+- `config/locales/ja.yml`に`materials.index`（タイトル・空状態文言・ダウンロード・新規登録・戻る）を追加
+- `spec/requests/materials_spec.rb`に`GET /materials`のテスト追加（200・登録済み資料タイトルの表示）、既存の`POST /materials`成功時アサーションを`materials_path`基準に更新
+- 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 44 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- 次の着手Issue: #43（教材ファイルの削除機能D）
+
