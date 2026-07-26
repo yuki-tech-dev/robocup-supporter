@@ -1,0 +1,31 @@
+<% content_for(:title, t('.title')) %>
+<div class="max-w-2xl mx-auto mt-10 px-6 mb-10">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold"><%= t('.title') %></h1>
+    <%= link_to new_material_path, class: "px-6 inline-flex items-center justify-center gap-2 text-white text-lg font-bold py-3 rounded-lg shadow-md bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" do %>
+      <%= t('.new') %>
+    <% end %>
+  </div>
+
+  <% if @materials.empty? %>
+    <p class="text-lg text-gray-500"><%= t('.empty') %></p>
+  <% else %>
+    <div class="space-y-4">
+      <% @materials.each do |material| %>
+        <div class="border border-gray-300 rounded-lg px-6 py-5 bg-gray-50 flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-xl font-bold truncate"><%= material.title %></p>
+            <p class="text-base text-gray-600 mt-1 whitespace-pre-wrap"><%= material.description %></p>
+          </div>
+          <% if material.file.attached? %>
+            <%= link_to t('.download'), rails_blob_path(material.file, disposition: "attachment"), class: "shrink-0 px-5 py-3 text-white text-lg font-bold rounded-lg shadow-md bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= link_to root_path, class: "mt-8 inline-flex items-center justify-center gap-2 w-full bg-gray-800 text-white text-xl font-bold py-4 rounded-lg shadow-md hover:bg-gray-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" do %>
+    ← <%= t('.return') %>
+  <% end %>
+</div>

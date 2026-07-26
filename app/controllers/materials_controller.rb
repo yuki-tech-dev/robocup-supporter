@@ -1,4 +1,9 @@
 class MaterialsController < ApplicationController
+  def index
+    # N+1問題対策: 一覧で各資料の添付ファイル情報を都度取得しないよう、事前に一括読み込みしておく
+    @materials = Material.with_attached_file.order(created_at: :desc)
+  end
+
   def new
     @material = Material.new
   end
@@ -6,8 +11,7 @@ class MaterialsController < ApplicationController
   def create
     @material = Material.new(material_params)
     if @material.save
-      # TODO: Issue #42で教材一覧画面が実装されたら、一覧へのリダイレクトに変更する
-      redirect_to root_path, success: t("materials.create.success")
+      redirect_to materials_path, success: t("materials.create.success")
     else
       flash.now[:danger] = t("materials.create.failure")
       render :new, status: :unprocessable_entity
