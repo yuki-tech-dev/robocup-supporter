@@ -3,6 +3,8 @@
   <%= link_to "RoboCup Supporter", root_path, class: "text-white text-2xl font-bold" %>
   <nav class="flex gap-3">
     <% if logged_in? %>
+      <%= link_to "教室カレンダー", root_path, class: "text-white px-3 py-2 hover:underline" %>
+      <%= link_to "教材一覧", materials_path, class: "text-white px-3 py-2 hover:underline" %>
       <span class="text-white px-3 py-2"><%= current_user.name %></span>
       <%= link_to "ログアウト", logout_path, data: { turbo_method: :delete }, class: "border border-white text-white px-5 py-2 rounded hover:bg-white hover:text-gray-800 transition" %>
     <% else %>

@@ -88,6 +88,12 @@ ja:
       success: 予定を削除しました
     delete_confirm: 本当にこの予定を削除しますか？
   materials:
+    index:
+      title: 教材一覧
+      empty: まだ資料が登録されていません
+      download: ダウンロード
+      new: 新規登録
+      return: 戻る
     new:
       title: 資料の新規登録
       return: 戻る
