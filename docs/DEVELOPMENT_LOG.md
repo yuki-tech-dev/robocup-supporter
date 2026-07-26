@@ -1012,3 +1012,15 @@ rm db/migrate/20260718075118_sorcery_core.rb
 
 - 次の着手Issue: #40（Active Storageの有効化と初期設定）
 
+### 2026-07-26 実施内容
+
+#### Issue #40: Active Storageの有効化と初期設定（完了）
+
+- `docker compose exec web bin/rails active_storage:install` でマイグレーション生成
+- `docker compose exec web bin/rails db:migrate` 実行、`active_storage_blobs`/`active_storage_attachments`/`active_storage_variant_records`が`db/schema.rb`に反映されたことを確認
+- `config/storage.yml`（local/test）・`config/environments/*.rb`の`config.active_storage.service`設定を確認（development/test: 既定の`:local`/`:test`のまま）
+- production環境の`config.active_storage.service = :local`について検討: Renderは永続ディスク非対応のため、本番でこのまま運用するとアップロードファイルが再デプロイ・再起動時に消える問題を認識。対応はAWS S3導入を待つ別Issue（GitHub Projectsにドラフト登録済み）に切り出し、今回は`:local`のままスコープを閉じる判断
+- `has_one_attached`等のモデルへの関連付けはIssue #41（教材アップロード機能）のスコープと確認、今回は含めない
+- 最終確認: `bin/rubocop` 56 files no offenses / `bundle exec rspec` 36 examples, 0 failures, 3 pending / `bin/brakeman` warning 1件（EOLRailsのみ）
+- 次の着手Issue: #41（教材アップロード（新規登録）機能）
+
