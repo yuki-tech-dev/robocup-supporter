@@ -1024,3 +1024,16 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 最終確認: `bin/rubocop` 56 files no offenses / `bundle exec rspec` 36 examples, 0 failures, 3 pending / `bin/brakeman` warning 1件（EOLRailsのみ）
 - 次の着手Issue: #41（教材アップロード（新規登録）機能）
 
+#### Issue #41: 教材アップロード（新規登録）機能（完了）
+
+- `app/models/material.rb`に`has_one_attached :file`を追加、`validate_file`（private）でサイズ（10MB以下）・形式（PDF/JPEG/PNGのみ）をチェックするカスタムバリデーションを実装
+- `config/routes.rb`に`resources :materials, only: %i[new create]`を追加
+- `app/controllers/materials_controller.rb`を新規作成（`new`/`create`）。`create`成功時は`root_path`へリダイレクト（教材一覧画面はIssue #42未実装のため、TODOコメントでリダイレクト先変更を明記）
+- `app/views/materials/new.html.erb`を新規作成（`schedules/new.html.erb`と同様のTailwindスタイル、`f.file_field :file`使用）
+- `config/locales/ja.yml`に`activerecord.attributes.material`・`helpers.label.material`・`materials.new`/`materials.create`のフラッシュ文言を追加
+- `spec/models/material_spec.rb`にファイルバリデーションのテストを追加（未対応形式、10MB超過の2件。実ファイルを用意せず`StringIO`＋`byte_size`のスタブで検証）
+- `spec/requests/materials_spec.rb`を新規作成（`GET /materials/new`の200・タイトル表示、`POST /materials`の正常系・異常系、計4件）。ファイル添付は`validate_file`が`file.attached?`を前提に早期returnする設計のため必須ではなく、テストでは添付なしで検証
+- 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 42 examples, 0 failures, 3 pending（既存の無関係スタブ）
+- 順序決定: 次は#42（教材一覧・ダウンロード機能R）→#43（教材ファイルの削除機能D）→#91（AWS S3本番導入）の順に着手。理由は教材のC/R/Dを一区切り終えてから本番ストレージ切替に進むことで、S3切替後の動作確認を一度にまとめて行えるため
+- 次の着手Issue: #42（教材一覧・ダウンロード機能R）
+

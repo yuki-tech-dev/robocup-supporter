@@ -12,6 +12,10 @@ ja:
         end_time: 終了日時
         location: 開催場所
         description: 補足・連絡事項
+      material:
+        title: タイトル
+        description: 説明
+        file: ファイル
     errors:
       models:
         schedule:
@@ -35,6 +39,10 @@ ja:
         end_time: 終了日時
         location: 開催場所
         description: 補足・連絡事項
+      material:
+        title: タイトル
+        description: 説明
+        file: ファイル
   defaults:
     flash_message:
       require_login: ログインしてください
@@ -79,3 +87,10 @@ ja:
     destroy:
       success: 予定を削除しました
     delete_confirm: 本当にこの予定を削除しますか？
+  materials:
+    new:
+      title: 資料の新規登録
+      return: 戻る
+    create:
+      success: 資料を登録しました
+      failure: 資料の登録に失敗しました
