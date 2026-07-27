@@ -18,6 +18,12 @@ RSpec.describe Material, type: :model do
     expect(material.errors[:title]).to include("は2文字以上で入力してください")
   end
 
+  it "ファイルが添付されていない場合、無効になること" do
+    material = Material.new(title: "操作マニュアル", description: "ロボットの操作方法についての説明資料です")
+    expect(material).to be_invalid
+    expect(material.errors[:file]).to include("を選択してください")
+  end
+
   it "対応していないファイル形式の場合、無効になること" do
     material = FactoryBot.build(:material)
     material.file.attach(io: StringIO.new("dummy"), filename: "sample.txt", content_type: "text/plain")
