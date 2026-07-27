@@ -7,7 +7,10 @@ class Material < ApplicationRecord
   private
 
   def validate_file
-    return unless file.attached?
+    unless file.attached?
+      errors.add(:file, "を選択してください")
+      return
+    end
 
     acceptable_types = [ "application/pdf", "image/jpeg", "image/png" ]
 
