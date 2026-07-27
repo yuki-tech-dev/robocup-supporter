@@ -21,7 +21,13 @@ RSpec.describe "Materials", type: :request do
 
   describe "POST /materials" do
     let(:valid_params) do
-      { material: { title: "操作マニュアル", description: "ロボットの操作方法についての説明資料です" } }
+      {
+        material: {
+          title: "操作マニュアル",
+          description: "ロボットの操作方法についての説明資料です",
+          file: fixture_file_upload("sample.pdf", "application/pdf")
+        }
+      }
     end
 
     let(:invalid_params) do
@@ -40,6 +46,13 @@ RSpec.describe "Materials", type: :request do
     it "不正な情報の場合、資料が作成されずエラーメッセージが表示されること" do
       expect do
         post materials_path, params: invalid_params
+      end.not_to change(Material, :count)
+      expect(response.body).to include("資料の登録に失敗しました")
+    end
+
+    it "ファイルが未添付の場合、資料が作成されずエラーメッセージが表示されること" do
+      expect do
+        post materials_path, params: { material: { title: "操作マニュアル", description: "説明" } }
       end.not_to change(Material, :count)
       expect(response.body).to include("資料の登録に失敗しました")
     end

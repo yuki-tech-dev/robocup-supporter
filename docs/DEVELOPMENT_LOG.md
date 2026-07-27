@@ -1076,3 +1076,15 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 45 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 1件（EOLRailsのみ）
 - 次の着手候補: #97（ロール権限制御）または#98（教材ファイル添付必須化）
 
+#### Issue #98: 教材アップロード時にファイル添付を必須にするバリデーション追加（完了）
+
+- `app/models/material.rb`の`validate_file`を修正: `return unless file.attached?`（未添付なら何もチェックせず通過）を`unless file.attached? ... errors.add(:file, "を選択してください") ... return`に反転し、未添付時に無効となるよう変更
+- エラーメッセージは`config/locales/ja.yml`ではなく、同メソッド内の既存のサイズ・形式チェックと同様に直接ハードコードする形で統一（1メソッド内でロケールキー方式とハードコードが混在すると可読性が落ちるため、既存スタイルに合わせた）
+- `spec/factories/materials.rb`に`after(:build)`フックを追加し、デフォルトでPDFファイル（`spec/fixtures/files/sample.pdf`、テスト用に新規作成したダミーファイル）を自動添付するよう変更。ファイル添付必須化に伴い、既存の`FactoryBot.build(:material)`/`FactoryBot.create(:material)`利用箇所（一覧・削除のrequest spec等）がすべて無効にならないための対応
+- `spec/models/material_spec.rb`に「ファイル未添付で無効になること」のテストを追加。ただしfactoryが自動添付するようになったため、あえて`FactoryBot.build`ではなく`Material.new`で直接組み立てて「添付なし」の状態を作る形にした
+- `spec/requests/materials_spec.rb`の既存の「有効な情報」テストに`file: fixture_file_upload("sample.pdf", "application/pdf")`を追加、新規に「ファイル未添付の場合、資料が作成されずエラーメッセージが表示されること」のテストを追加
+- ハマりポイント（教訓）: `fixture_file_upload("files/sample.pdf", ...)`のように`"files/"`プレフィックスを付けて呼び出したところ`ArgumentError`が発生 → rspec-railsは既に`spec/fixtures/files/`を基準ディレクトリとして解釈するため、`"files/"`を含めず`fixture_file_upload("sample.pdf", ...)`のようにファイル名のみ指定するのが正解だった
+  - このIssueもユーザーが時間の都合で明示的に「実装して」と依頼したため、AIが直接コード修正を行った
+- 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 47 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 1件（EOLRailsのみ）
+- 次の着手Issue: #97（ロール権限制御）または#91（AWS S3本番導入）
+
