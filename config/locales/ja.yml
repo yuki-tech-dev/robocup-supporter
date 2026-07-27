@@ -76,7 +76,6 @@ ja:
     show:
       title: 予定の詳細
       return: 戻る
-      edit: 編集
     update:
       success: 予定を更新しました
       failure: 予定の更新に失敗しました
