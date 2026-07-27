@@ -100,3 +100,6 @@ ja:
     create:
       success: 資料を登録しました
       failure: 資料の登録に失敗しました
+    destroy:
+      success: 資料を削除しました
+    delete_confirm: 本当にこの資料を削除しますか？
