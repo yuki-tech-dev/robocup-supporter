@@ -1066,3 +1066,13 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 45 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 1件（EOLRailsのみ）
 - 次の着手Issue: #91（AWS S3本番導入）
 
+#### Issue #96: 予定詳細画面の編集ボタンをペンシルアイコンに変更する（完了）
+
+- `app/views/schedules/show.html.erb`の「編集」ボタンを、テキストリンク（青いボタン＋「編集」文字）からペンシルアイコンのSVGボタンに変更
+- アイコンはHeroicons（MITライセンス、Tailwind CSS公式提供）の`pencil`（24x24 solidスタイル）のパスを使用。`viewBox="0 0 24 24"`・`class="size-7 text-gray-500 hover:text-gray-700 transition-colors"`は削除ボタン（ゴミ箱アイコン）と完全に揃え、サイズ・配置感を統一
+- 編集ボタンに`id: "button-edit-#{@schedule.id}"`を付与し、削除ボタン（`id: "button-delete-#{@schedule.id}"`）と命名規則を統一
+- テキスト表示（`t('.edit')`）が不要になったため、`config/locales/ja.yml`の`schedules.show.edit`キー（未使用になった翻訳）を削除
+- 追加テストは不要と判断: 新規画面・新規ルートの追加ではなく既存画面の見た目変更のみで、リンク先（`edit_schedule_path`）の動作自体は既存の`GET /schedules/:id/edit`テストでカバー済み。Issue #38（削除ボタンのアイコン化）でもアイコン表示自体を検証するテストは追加しておらず、方針として一貫性を優先
+- 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 45 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 1件（EOLRailsのみ）
+- 次の着手候補: #97（ロール権限制御）または#98（教材ファイル添付必須化）
+
