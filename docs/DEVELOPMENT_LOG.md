@@ -1051,3 +1051,18 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 44 examples, 0 failures, 3 pending（既存の無関係スタブ）
 - 次の着手Issue: #43（教材ファイルの削除機能D）
 
+#### Issue #43: 教材ファイルの削除機能（D：Delete）（完了）
+
+- `config/routes.rb`の`resources :materials`に`destroy`を追加
+- `MaterialsController`に`before_action :set_material, only: %i[destroy]`を追加し`destroy`アクションを実装（`@material.destroy!`→`materials_path`へリダイレクト＋`danger`フラッシュ）。`Schedule`の削除（Issue #38）と同じ設計パターンを踏襲
+- Active Storageの添付ファイルは`Material`レコード削除に伴い自動でパージされる（`has_one_attached`の標準挙動、追加設定不要）ことを確認
+- `app/views/materials/index.html.erb`の各カード（`@materials.each`ブロック内）にインラインSVGの削除ボタンを追加（`turbo_method: :delete`＋`turbo_confirm`で確認ダイアログ、ダウンロードボタンと横並びに配置）
+- `config/locales/ja.yml`に`materials.destroy.success`（資料を削除しました）・`materials.delete_confirm`（本当にこの資料を削除しますか？）を追加
+- ハマりポイント（教訓）:
+  - `materials.destroy.success`の文言を`schedules.destroy.success`からのコピペで用意した際、「予定を削除しました」のまま文言を直し忘れていた事象が発生 → コピペ元と対象モデル名が一致しているか毎回確認する必要がある
+  - 削除ボタンの初回実装時、`each`ループの**外側**（見出し部分）に配置してしまい、存在しない`@material`（単数形・未定義）を参照する誤りが発生 → 一覧画面で複数件を扱う場合、操作対象を特定するボタンは必ず`each`ブロック内、ループ変数（`material`）に対して書く必要がある
+  - 確認ダイアログの翻訳キーを`t('material.delete_confirm')`（単数形）と誤記し、`ja.yml`側の`materials.delete_confirm`（複数形）と一致していなかった → キー名の単数/複数の統一を都度確認する
+- `spec/requests/materials_spec.rb`に`DELETE /materials/:id`のテスト追加（成功系1件、Rule 13の最小テスト方針・`schedules_spec.rb`と同様のパターン）
+- 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 45 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 1件（EOLRailsのみ）
+- 次の着手Issue: #91（AWS S3本番導入）
+

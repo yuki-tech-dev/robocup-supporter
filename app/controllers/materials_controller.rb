@@ -1,4 +1,5 @@
 class MaterialsController < ApplicationController
+  before_action :set_material, only: %i[destroy]
   def index
     # N+1問題対策: 一覧で各資料の添付ファイル情報を都度取得しないよう、事前に一括読み込みしておく
     @materials = Material.with_attached_file.order(created_at: :desc)
@@ -18,7 +19,16 @@ class MaterialsController < ApplicationController
     end
   end
 
+  def destroy
+    @material.destroy!
+    redirect_to materials_path, danger: t("materials.destroy.success")
+  end
+
   private
+
+  def set_material
+    @material = Material.find(params[:id])
+  end
 
   def material_params
     params.require(:material).permit(:title, :description, :file)

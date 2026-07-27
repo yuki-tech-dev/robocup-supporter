@@ -57,4 +57,17 @@ RSpec.describe "Materials", type: :request do
       expect(response.body).to include(material.title)
     end
   end
+
+  describe "DELETE /materials/:id" do
+    let!(:material) { FactoryBot.create(:material) }
+
+    it "資料が削除され一覧ページにリダイレクトされ、削除成功メッセージが表示されること" do
+      expect do
+        delete material_path(material)
+      end.to change(Material, :count).by(-1)
+      expect(response).to redirect_to(materials_path)
+      follow_redirect!
+      expect(response.body).to include("資料を削除しました")
+    end
+  end
 end
