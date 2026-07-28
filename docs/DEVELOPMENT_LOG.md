@@ -890,7 +890,7 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - `.github/copilot-instructions.md`の差分を目視確認。既存のルール番号・章立てに影響がないことを確認（renumberingなし）
 - ドキュメントのみの変更のため、アプリケーションの動作確認は不要
 
-### 2026-07-25 実施内容（続き）
+### 2026-07-25 実施内容（続き・Issue #37）
 
 #### Issue #37: 予定の編集・更新機能の作成（U：Update）（完了）
 
@@ -933,7 +933,7 @@ rm db/migrate/20260718075118_sorcery_core.rb
 
 - 次の着手Issue: #38（予定の削除機能D）
 
-### 2026-07-25 実施内容（続き）
+### 2026-07-25 実施内容（続き・Issue #38）
 
 #### Issue #38: 予定の削除機能の作成（D：Delete）（完了）
 
@@ -973,7 +973,7 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 編集ボタンをペンシルアイコンに変更する件は、統一感の観点からスコープを分離し、GitHub Projectsにドラフトissueとして登録済み（別Issueで対応予定）
 - 次の着手Issue: #39（materialsテーブルのマイグレーション作成）
 
-### 2026-07-25 実施内容（続き）
+### 2026-07-25 実施内容（続き・Issue #39）
 
 #### Issue #39: materialsテーブルのマイグレーション作成（完了）
 
@@ -1106,3 +1106,15 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - このIssueもユーザーが時間の都合で明示的に「実装して」と依頼したため、AIが直接コード修正を行った
 - 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 49 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 0件
 
+#### Issue #44・#45: プライバシーポリシーページ・利用規約ページの作成（完了）
+
+- 2つのIssueをまとめて対応。フッター（`app/views/shared/_footer.html.erb`）に元々`#`のプレースホルダーリンクが存在し、遷移先ページ自体が未実装だった
+- `app/controllers/pages_controller.rb`を新規作成し、`terms`・`privacy_policy`の2アクションを追加（ビューをレンダリングするのみ）。フッターは未ログイン状態（ログイン・サインアップ画面）でも常時表示されるため、`TopController`等と同様に`skip_before_action :require_login, only: %i[terms privacy_policy]`を設定
+- `config/routes.rb`に`get "terms", to: "pages#terms"`・`get "privacy_policy", to: "pages#privacy_policy"`を追加
+- `app/views/pages/terms.html.erb`・`app/views/pages/privacy_policy.html.erb`を新規作成。Tailwindで見出し（`font-semibold text-lg`）・本文（`text-base leading-relaxed`）をスタイリングし、他の静的ページ（`schedules/show.html.erb`等）と統一感のある「戻る」ボタン（`bg-gray-800`フル幅）を配置
+- `config/locales/ja.yml`に`pages.terms`・`pages.privacy_policy`（各`title`/`return`）を追加
+- `app/views/shared/_footer.html.erb`のプレースホルダーリンク（`"#"`＋TODOコメント）を`terms_path`・`privacy_policy_path`に差し替え、TODOコメントを除去
+- `spec/requests/pages_spec.rb`を新規作成（`GET /terms`・`GET /privacy_policy`それぞれについて200成功・タイトル表示の計4件、Rule 13の最小テスト方針）
+- 規約・ポリシー本文は一般的なテンプレートに基づく仮の内容とし、正式リリース前の法務観点での見直しが必要な旨をPR本文に補足として明記
+- コミット4分割（feat: ルーティング・コントローラー追加 → feat: ビュー作成 → fix: フッターリンク差し替え → test: リクエストスペック追加）、PR作成・マージ済み（fixes #44, fixes #45）
+- 最終確認: `bin/rubocop` 60 files no offenses / `bundle exec rspec spec/requests/pages_spec.rb` 4 examples, 0 failures / `bin/brakeman -q --except EOLRails` warning 0件
