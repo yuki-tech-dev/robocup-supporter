@@ -4,5 +4,9 @@ FactoryBot.define do
     name { "テストユーザー" }
     password { "password" }
     password_confirmation { "password" }
+
+    trait :staff do
+      role { :staff }
+    end
   end
 end
