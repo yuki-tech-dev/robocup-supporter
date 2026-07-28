@@ -103,3 +103,10 @@ ja:
     destroy:
       success: 資料を削除しました
     delete_confirm: 本当にこの資料を削除しますか？
+  pages:
+    terms:
+      title: 利用規約
+      return: 戻る
+    privacy_policy:
+      title: プライバシーポリシー
+      return: 戻る

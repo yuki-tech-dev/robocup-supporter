@@ -1,0 +1,45 @@
+<% content_for(:title, t('.title')) %>
+<div class="max-w-2xl mx-auto mt-10 px-6 mb-10">
+  <h1 class="text-2xl font-bold mb-6"><%= t('.title') %></h1>
+
+  <div class="space-y-6 text-base leading-relaxed">
+    <section>
+      <h2 class="font-semibold text-lg mb-2">1. 個人情報の定義</h2>
+      <p>本ポリシーにおいて「個人情報」とは、氏名、メールアドレスその他の記述等により特定の個人を識別できる情報を指します。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">2. 個人情報の利用目的</h2>
+      <p>運営者は、利用者から取得した個人情報を、以下の目的の範囲内で利用します。</p>
+      <ul class="list-disc list-inside mt-2 space-y-1">
+        <li>本サービス（教室カレンダー・教材配布等）の提供・運営のため</li>
+        <li>利用者からのお問い合わせに対応するため</li>
+        <li>本サービスの改善、新機能の開発のため</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">3. 個人情報の第三者提供の制限</h2>
+      <p>運営者は、法令に基づく場合を除き、あらかじめ利用者の同意を得ることなく、第三者に個人情報を提供することはありません。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">4. 個人情報の安全管理措置</h2>
+      <p>運営者は、個人情報の漏えい、滅失またはき損の防止その他の個人情報の安全管理のために必要かつ適切な措置を講じます。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">5. 個人情報の開示・訂正・削除</h2>
+      <p>利用者は、運営者が保有する自己の個人情報について、開示、訂正、削除を求めることができます。ご希望の場合は、運営者までお問い合わせください。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">6. プライバシーポリシーの変更</h2>
+      <p>運営者は、必要と判断した場合には、利用者への事前の通知なく本ポリシーを変更できるものとします。変更後のプライバシーポリシーは、本サービス上に掲載した時点から効力を生じるものとします。</p>
+    </section>
+  </div>
+
+  <%= link_to root_path, class: "mt-8 inline-flex items-center justify-center gap-2 w-full bg-gray-800 text-white text-xl font-bold py-4 rounded-lg shadow-md hover:bg-gray-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" do %>
+    ← <%= t('.return') %>
+  <% end %>
+</div>

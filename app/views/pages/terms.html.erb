@@ -1,0 +1,47 @@
+<% content_for(:title, t('.title')) %>
+<div class="max-w-2xl mx-auto mt-10 px-6 mb-10">
+  <h1 class="text-2xl font-bold mb-6"><%= t('.title') %></h1>
+
+  <div class="space-y-6 text-base leading-relaxed">
+    <section>
+      <h2 class="font-semibold text-lg mb-2">第1条（適用）</h2>
+      <p>本規約は、RoboCup Supporter（以下「本サービス」）の利用条件を定めるものです。利用者は本規約に同意の上、本サービスを利用するものとします。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">第2条（利用登録）</h2>
+      <p>本サービスの利用を希望する方は、所定の方法により利用登録を行うものとします。運営者は、登録内容に虚偽がある場合等、相当の理由があると判断した場合には、登録を拒否することがあります。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">第3条（禁止事項）</h2>
+      <p>利用者は、本サービスの利用にあたり、以下の行為をしてはならないものとします。</p>
+      <ul class="list-disc list-inside mt-2 space-y-1">
+        <li>法令または公序良俗に違反する行為</li>
+        <li>本サービスの運営を妨害する行為</li>
+        <li>他の利用者に関する個人情報等を収集または蓄積する行為</li>
+        <li>他の利用者になりすます行為</li>
+        <li>その他、運営者が不適切と判断する行為</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">第4条（本サービスの変更・中断・停止）</h2>
+      <p>運営者は、利用者への事前の通知なく、本サービスの内容を変更し、または提供を中断・停止することができるものとします。これによって利用者に生じた損害について、運営者は一切の責任を負いません。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">第5条（免責事項）</h2>
+      <p>運営者は、本サービスに事実上または法律上の瑕疵がないことを明示的にも黙示的にも保証しておらず、本サービスに起因して利用者に生じたあらゆる損害について、運営者の故意または重過失による場合を除き、一切の責任を負いません。</p>
+    </section>
+
+    <section>
+      <h2 class="font-semibold text-lg mb-2">第6条（利用規約の変更）</h2>
+      <p>運営者は、必要と判断した場合には、利用者への事前の通知なく本規約を変更できるものとします。変更後の利用規約は、本サービス上に掲載した時点から効力を生じるものとします。</p>
+    </section>
+  </div>
+
+  <%= link_to root_path, class: "mt-8 inline-flex items-center justify-center gap-2 w-full bg-gray-800 text-white text-xl font-bold py-4 rounded-lg shadow-md hover:bg-gray-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" do %>
+    ← <%= t('.return') %>
+  <% end %>
+</div>
