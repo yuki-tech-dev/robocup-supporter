@@ -1088,3 +1088,21 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 47 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 1件（EOLRailsのみ）
 - 次の着手Issue: #97（ロール権限制御）または#91（AWS S3本番導入）
 
+#### Issue #97: ロール（member/staff）に基づくスケジュール・教材操作の権限制御（完了）
+
+- `app/controllers/application_controller.rb`に`require_staff`メソッドを追加（`current_user.staff?`でなければ`root_path`へリダイレクト＋`danger`フラッシュ、`require_login`と同じパターン）。メソッド**定義**は`ApplicationController`に置いたが、`before_action`の**呼び出し**自体は各コントローラー側に限定した（過去に`before_action`を`ApplicationController`へ直接書いて全コントローラーに影響が及んだ失敗があったため）
+  - `SchedulesController`: `before_action :require_staff, only: %i[new create edit update destroy]`
+  - `MaterialsController`: `before_action :require_staff, only: %i[new create destroy]`
+- `config/locales/ja.yml`に`defaults.flash_message.require_staff`（スタッフのみ操作できます）を追加
+- ビュー側で`current_user.staff?`によるボタン出し分けを実装
+  - `app/views/schedules/show.html.erb`: 編集・削除アイコンをstaffのみ表示
+  - `app/views/materials/index.html.erb`: 新規登録ボタン・削除アイコンをstaffのみ表示（ダウンロードは全員に表示のまま）
+- **発見・追加対応**: 予定（Schedule）の新規登録への導線がカレンダー画面にそもそも存在しなかった（URL直打ちでのみ到達可能な状態）。ユーザー指摘を受け、`app/views/top/_calendar_home.html.erb`に「予定を登録」ボタンを新規追加（`materials/index.html.erb`と同じ右上配置、staffのみ表示。このファイルは元々i18nを使っていないため、既存スタイルに合わせてハードコーディング）
+- `spec/factories/users.rb`に`trait :staff`を追加。既存のCRUD系リクエストスペック（`spec/requests/schedules_spec.rb`・`spec/requests/materials_spec.rb`）のログインユーザーを`:staff`に変更し、「staffなら従来通り操作できる」という完了条件を担保。それぞれに「memberロールでは新規登録ページにアクセスできず`root_path`へリダイレクトされる」テストを1件ずつ追加（`new`/`create`/`edit`/`update`/`destroy`は同一の`before_action`で保護されているため、代表して`new`のみ検証。Rule 13の最小テスト方針）
+- スコープ外と判断した項目:
+  - ヘッダーの「スタッフ専用ページへ」導線（該当ページ自体が未実装のため今回は対応しない）
+  - `admin`ロール（Issue本文の通りMVP範囲外）
+- 本番環境での動作確認方法について: ユーザー登録画面ではroleを指定できない仕様（`user_params`が意図的に`role`を許可していない、マスアサインメント対策）のため、本番でmember/staffそれぞれの権限を確認する手段について議論。①Neon SQL Editorで`UPDATE users SET role = 1 WHERE email = '...'`を直接実行してデモアカウントのroleを変更する、②デモアカウントの認証情報をREADME等に記載する、の2方式で合意。実施は別Issue「本番環境でのロール別（member/staff）権限動作確認」を新規作成し、そちらで対応する
+- このIssueもユーザーが時間の都合で明示的に「実装して」と依頼したため、AIが直接コード修正を行った
+- 最終確認: `bin/rubocop` 58 files no offenses / `bundle exec rspec` 49 examples, 0 failures, 3 pending（既存の無関係スタブ）/ `bin/brakeman` warning 0件
+

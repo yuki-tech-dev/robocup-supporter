@@ -46,6 +46,7 @@ ja:
   defaults:
     flash_message:
       require_login: ログインしてください
+      require_staff: スタッフのみ操作できます
   header:
     login: ログイン
     logout: ログアウト

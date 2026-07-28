@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe "Materials", type: :request do
-  let(:user) { FactoryBot.create(:user, password: "password", password_confirmation: "password") }
+  let(:user) { FactoryBot.create(:user, :staff, password: "password", password_confirmation: "password") }
 
   before do
     post login_path, params: { email: user.email, password: "password" }
@@ -81,6 +81,19 @@ RSpec.describe "Materials", type: :request do
       expect(response).to redirect_to(materials_path)
       follow_redirect!
       expect(response.body).to include("資料を削除しました")
+    end
+  end
+
+  describe "権限制御" do
+    let(:member) { FactoryBot.create(:user, password: "password", password_confirmation: "password") }
+
+    before do
+      post login_path, params: { email: member.email, password: "password" }
+    end
+
+    it "memberロールの場合、資料の新規登録ページにアクセスできずトップページへリダイレクトされること" do
+      get new_material_path
+      expect(response).to redirect_to(root_path)
     end
   end
 end

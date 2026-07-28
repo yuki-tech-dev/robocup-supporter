@@ -2,6 +2,7 @@ class SchedulesController < ApplicationController
   # before_action :set_schedule
   # skip_before_action :set_schedule, only: %i[new create]
   before_action :set_schedule, only: %i[show edit update destroy]
+  before_action :require_staff, only: %i[new create edit update destroy]
 
   def new
     @schedule = Schedule.new
