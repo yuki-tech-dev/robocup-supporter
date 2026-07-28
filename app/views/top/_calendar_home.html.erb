@@ -1,5 +1,12 @@
 <main class="max-w-4xl mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">教室カレンダー</h1>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold">教室カレンダー</h1>
+    <% if current_user.staff? %>
+      <%= link_to new_schedule_path, class: "px-6 inline-flex items-center justify-center gap-2 text-white text-lg font-bold py-3 rounded-lg shadow-md bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" do %>
+        予定を登録
+      <% end %>
+    <% end %>
+  </div>
 
   <div class="bg-white rounded-lg shadow p-4 mb-8 text-lg">
     <%= month_calendar events: @schedules, start_time_field: :start_time do |date, schedules| %>
