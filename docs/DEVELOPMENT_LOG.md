@@ -1162,3 +1162,18 @@ rm db/migrate/20260718075118_sorcery_core.rb
   - 「本番環境でstaffロールの場合、すべての操作が従来通り行えること」→ 確認済み
   - 「デモアカウントの認証情報がMVP提出用Issueに記載されていること」→ MVP提出用Issue作成時に記載予定
 - Issueクローズは、上記の確認結果をもって`gh issue close 101`で対応予定（ユーザー承認後に実行）
+
+### Issue #111: 存在しないスケジュールへのアクセス時の専用404ページ（2026-07-30、実装完了）
+
+- ブランチ`feat/issue-111-custom-404-page`で作業。MVP提出後の改善Issue（`/schedules/2`のような存在しないidアクセス時、Rails標準の素っ気ない404が表示される問題）に対応
+- ユーザーから明示的に「実装して」と依頼されたため、AIが直接コード修正を行った
+- 対応方針は「静的ファイル（`public/404.html`）の作り直し」ではなく「`rescue_from`による動的ハンドリング」を採用。共通レイアウト（ヘッダー・フッター）やTailwindスタイル、i18nをそのまま流用できるメリットを優先した
+- `ApplicationController`に`rescue_from ActiveRecord::RecordNotFound, with: :render_not_found`を追加、`render_not_found`で`errors/not_found`ビューを`status: :not_found`（404）でレンダリング
+  - `before_action`と異なり`rescue_from`は例外発生時のフォールバックのため、`ApplicationController`に置いても全コントローラーへの挙動変化（副作用）は生まない
+  - `materials`コントローラーの`destroy`アクションでも同じ`ActiveRecord::RecordNotFound`が起こり得るため、この修正で自動的にカバーされる（教材側は`show`ルート自体が無く影響は限定的だが、副次的なメリットとして確認済み）
+- `app/views/errors/not_found.html.erb`を新規作成。既存の`schedules/show.html.erb`の「戻る」ボタンスタイルを踏襲し、トップページへの導線を用意
+- `config/locales/ja.yml`に`errors.not_found.title/message/return`を追加
+- `spec/requests/schedules_spec.rb`に「存在しないidでアクセス時、404ページが表示されること」のテストを追加（Rule 13の最小テスト方針）
+- 本番環境（`config.action_dispatch.show_exceptions`が有効な状態）でも`rescue_from`はミドルウェア層の`public/404.html`フォールバックより先に効くため、今回のビューが使われる想定
+- 最終確認: `bin/rubocop` 60 files no offenses / `bundle exec rspec`（schedules_spec.rb） 13 examples, 0 failures
+- 手動確認: ローカル環境で存在しないidへのアクセス時の表示・「戻る」ボタン動作を確認済み
