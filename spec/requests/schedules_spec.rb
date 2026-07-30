@@ -31,6 +31,12 @@ RSpec.describe "Schedules", type: :request do
       get schedule_path(schedule)
       expect(response.body).to include(schedule.title)
     end
+
+    it "存在しないidの場合、404ページが表示されること" do
+      get schedule_path(id: schedule.id + 10_000)
+      expect(response).to have_http_status(:not_found)
+      expect(response.body).to include("ページが見つかりません")
+    end
   end
 
   describe "POST /schedules" do
