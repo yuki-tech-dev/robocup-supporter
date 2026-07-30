@@ -1177,4 +1177,3 @@ rm db/migrate/20260718075118_sorcery_core.rb
 - 本番環境（`config.action_dispatch.show_exceptions`が有効な状態）でも`rescue_from`はミドルウェア層の`public/404.html`フォールバックより先に効くため、今回のビューが使われる想定
 - 最終確認: `bin/rubocop` 60 files no offenses / `bundle exec rspec`（schedules_spec.rb） 13 examples, 0 failures
 - 手動確認: ローカル環境で存在しないidへのアクセス時の表示・「戻る」ボタン動作を確認済み
-
