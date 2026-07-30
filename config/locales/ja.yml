@@ -110,3 +110,8 @@ ja:
     privacy_policy:
       title: プライバシーポリシー
       return: 戻る
+  errors:
+    not_found:
+      title: ページが見つかりません
+      message: お探しのページは存在しないか、削除された可能性があります。
+      return: トップページへ戻る

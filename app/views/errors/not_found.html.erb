@@ -1,0 +1,10 @@
+<% content_for(:title, t('.title')) %>
+<div class="max-w-2xl mx-auto mt-10 px-6 mb-10 text-center">
+  <h1 class="text-3xl font-bold mb-4">404</h1>
+  <p class="text-xl font-semibold mb-2"><%= t('.title') %></p>
+  <p class="text-gray-600 mb-8"><%= t('.message') %></p>
+
+  <%= link_to root_path, class: "inline-flex items-center justify-center gap-2 w-full bg-gray-800 text-white text-xl font-bold py-4 rounded-lg shadow-md hover:bg-gray-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" do %>
+  ← <%= t('.return') %>
+  <% end %>
+</div>

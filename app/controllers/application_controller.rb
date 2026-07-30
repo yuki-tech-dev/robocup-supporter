@@ -6,6 +6,10 @@ class ApplicationController < ActionController::Base
   before_action :require_login
   add_flash_types :success, :danger
 
+  # 存在しないid（例: /schedules/2）へのアクセス時、Rails標準の素っ気ない404ではなく
+  # アプリのデザイン（共通レイアウト）に沿った404ページを表示するため、ApplicationController単位で捕捉する
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+
   def logged_in?
     !!current_user
   end
@@ -27,5 +31,9 @@ class ApplicationController < ActionController::Base
 
   def require_staff
     redirect_to root_path, danger: t("defaults.flash_message.require_staff") unless current_user.staff?
+  end
+
+  def render_not_found
+    render "errors/not_found", status: :not_found
   end
 end
